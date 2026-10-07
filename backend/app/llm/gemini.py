@@ -178,3 +178,7 @@ class GeminiGateway(LLMGateway):
                 raise LLMQuotaExceededError(f"Gemini quota exceeded: {error_str}") from e
 
             raise LLMAPIError(f"Gemini API error: {error_str}") from e
+
+
+# Alias for explicit naming
+GeminiProvider = GeminiGateway

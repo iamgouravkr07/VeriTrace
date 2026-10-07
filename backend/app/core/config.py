@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, Optional
 from dotenv import load_dotenv
 
 # Load environment variables from .env file if it exists
@@ -11,9 +11,20 @@ class Settings:
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
 
+    # LLM Provider Selection ("gemini" or "grok")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower().strip()
+    LLM_FALLBACK_PROVIDER: Optional[str] = os.getenv("LLM_FALLBACK_PROVIDER", "").lower().strip() or None
+
     # Gemini LLM Settings
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "").strip()
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+
+    # Grok / xAI LLM Settings
+    XAI_API_KEY: str = os.getenv("XAI_API_KEY", "").strip()
+    XAI_BASE_URL: str = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1").strip()
+    GROK_MODEL: str = os.getenv("GROK_MODEL", "grok-4.7").strip()
+
+    # Shared LLM Parameters
     LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "30.0"))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.0"))
 
