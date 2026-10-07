@@ -46,30 +46,30 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
 
 
   return (
-    <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-2xs transition-colors duration-200">
+    <header className="bg-white/85 dark:bg-[#08090C]/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 shadow-2xs transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center font-black text-base shadow-sm ring-2 ring-blue-500/20">
-            <ShieldCheck className="w-5 h-5 text-white" />
+          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black shadow-md shadow-blue-500/20 ring-1 ring-white/20">
+            <ShieldCheck className="w-5 h-5 text-white stroke-[2.2]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-slate-900 dark:text-slate-100 tracking-tight text-base font-sans">
                 VeriTrace
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                Observability
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
+                v0.1.0
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
-              AI Safety &bull; LLM Hallucination Verification Engine
+              AI Observability &bull; LLM Hallucination Verification Engine
             </p>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <nav className="flex items-center gap-1 sm:gap-1.5" aria-label="Main Navigation">
+        {/* Segmented Pill Navigation */}
+        <nav className="flex items-center p-1 bg-slate-100/90 dark:bg-[#0c0e14]/90 border border-slate-200/80 dark:border-slate-800 rounded-xl" aria-label="Main Navigation">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = activeTab === link.id;
@@ -81,8 +81,8 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
                 onClick={() => onSelectTab(link.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-white dark:bg-[#151921] text-blue-600 dark:text-cyan-400 border border-slate-200/60 dark:border-slate-700/80 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/50'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -96,12 +96,12 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
         <div className="flex items-center gap-2.5">
           {/* Health Badge */}
           <div
-            className={`flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
               isChecking
-                ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'
+                ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-400'
                 : isHealthy
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                  ? 'bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30 text-amber-700 dark:text-amber-300'
             }`}
             title={
               isHealthy
@@ -124,12 +124,12 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
               />
             </span>
 
-            <span className="text-[11px] hidden lg:inline">
+            <span className="text-[10px] font-mono uppercase tracking-wide hidden lg:inline">
               {isChecking
                 ? 'Probing backend...'
                 : isHealthy
-                  ? 'Backend Online (:8000)'
-                  : 'Offline Demo Presets'}
+                  ? 'Engine :8000 (Live)'
+                  : 'Engine Offline (Presets)'}
             </span>
           </div>
 
@@ -138,7 +138,7 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-750 transition-all cursor-pointer shadow-2xs"
+            className="p-2 rounded-xl bg-slate-100/90 dark:bg-[#0c0e14]/90 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-all cursor-pointer shadow-2xs"
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
             {theme === 'dark' ? (

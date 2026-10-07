@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Sparkles,
   Bot,
@@ -135,6 +135,26 @@ export const Studio = ({
     }
   };
 
+  const handleVerifyRef = useRef(handleVerify);
+  useEffect(() => {
+    handleVerifyRef.current = handleVerify;
+  });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!loading && query.trim()) {
+          handleVerifyRef.current();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [loading, query]);
+
   const handleReset = () => {
     setResult(null);
     setError(null);
@@ -156,7 +176,7 @@ export const Studio = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: QUERY & LLM OUTPUT CONFIGURATION */}
         <section className="lg:col-span-5 space-y-5">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-4 transition-colors">
+          <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4 transition-colors duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <Bot className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -353,29 +373,38 @@ export const Studio = ({
               )}
             </div>
 
-            {/* Primary Action Button */}
+            {/* Primary Action Button with Shimmering Gradient Border & Mechanical Keycap */}
             <div className="pt-2">
               <button
                 type="button"
                 onClick={handleVerify}
                 disabled={loading || !query.trim()}
-                className={`w-full py-3 px-4 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full relative group rounded-xl p-[1.5px] transition-all duration-300 cursor-pointer overflow-hidden ${
                   loading || !query.trim()
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white hover:shadow-md'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-blue-500/20'
                 }`}
               >
-                {loading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Verifying Claims (Stage {pipelineStage}/5)...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-white" />
-                    <span>[ RUN VERITRACE VERIFICATION ]</span>
-                  </>
-                )}
+                {/* Animated gradient border */}
+                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 group-hover:from-blue-500 group-hover:via-purple-500 group-hover:to-pink-500 transition-all duration-500" />
+
+                {/* Inner button container */}
+                <span className="relative flex items-center justify-center gap-2 py-3 px-4 rounded-[10.5px] bg-slate-900 dark:bg-[#08090c] text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 group-hover:bg-opacity-90">
+                  {loading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="font-mono">Verifying Claims (Stage 0{pipelineStage}/05)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-cyan-400 text-cyan-400 group-hover:scale-110 transition-transform" />
+                      <span className="tracking-widest">Execute Truth Verification</span>
+                      <span className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 text-[10px] font-mono text-slate-300 bg-slate-800 border border-slate-700 rounded shadow-xs">
+                        Ctrl+↵
+                      </span>
+                    </>
+                  )}
+                </span>
               </button>
             </div>
           </div>
@@ -464,7 +493,7 @@ export const Studio = ({
 
           {/* INITIAL EMPTY STATE */}
           {!loading && !result && !error && (
-            <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-8 text-center space-y-5 shadow-2xs transition-colors">
+            <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-8 text-center space-y-5 shadow-2xs transition-colors">
               <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-2xl mx-auto shadow-inner">
                 <ShieldCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>

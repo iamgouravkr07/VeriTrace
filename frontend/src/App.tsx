@@ -28,7 +28,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#08090C] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 tech-grid-canvas">
         <Navbar activeTab={tab} onSelectTab={setTab} />
 
         <main className="flex-1">
@@ -45,8 +45,8 @@ export default function App() {
           {tab === 'history' && <History onLoadRun={handleInspectHistoryItem} />}
         </main>
 
-        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 mt-auto transition-colors duration-200">
-          <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 dark:text-slate-500">
+        <footer className="border-t border-slate-200/80 dark:border-slate-800/80 bg-white/75 dark:bg-[#08090C]/80 backdrop-blur-md py-4 mt-auto transition-colors duration-200">
+          <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 dark:text-slate-500 font-mono">
             VeriTrace &bull; Hallucination Detection &amp; Verification Middleware &bull; Member 2 Frontend
           </div>
         </footer>

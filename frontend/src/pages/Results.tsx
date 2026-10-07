@@ -57,67 +57,67 @@ export const Results = ({ result, isLiveBackend, notice, onReset }: ResultsProps
         <button
           type="button"
           onClick={() => setFilter(filter === 'SUPPORTED' ? 'ALL' : 'SUPPORTED')}
-          className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-center transition-all cursor-pointer backdrop-blur-sm ${
             filter === 'SUPPORTED'
-              ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-300 dark:ring-emerald-800'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700'
+              ? 'bg-emerald-500/15 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/10'
+              : 'bg-white/80 dark:bg-[#0c0e14]/90 border-slate-200/90 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-600'
           }`}
         >
-          <div className="flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center justify-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider font-mono">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Supported</span>
           </div>
-          <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{supportedCount}</div>
+          <div className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">{supportedCount}</div>
         </button>
 
         <button
           type="button"
           onClick={() => setFilter(filter === 'CONTRADICTED' ? 'ALL' : 'CONTRADICTED')}
-          className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-center transition-all cursor-pointer backdrop-blur-sm ${
             filter === 'CONTRADICTED'
-              ? 'bg-rose-50 dark:bg-rose-950/70 border-rose-400 dark:border-rose-600 ring-2 ring-rose-300 dark:ring-rose-800'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700'
+              ? 'bg-rose-500/15 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/30 shadow-md shadow-rose-500/10'
+              : 'bg-white/80 dark:bg-[#0c0e14]/90 border-slate-200/90 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-600'
           }`}
         >
-          <div className="flex items-center justify-center gap-1.5 text-rose-800 dark:text-rose-300 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center justify-center gap-1.5 text-rose-700 dark:text-rose-400 text-xs font-bold uppercase tracking-wider font-mono">
             <AlertOctagon className="w-3.5 h-3.5" />
             <span>Contradicted</span>
           </div>
-          <div className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{contradictedCount}</div>
+          <div className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400 mt-1">{contradictedCount}</div>
         </button>
 
         <button
           type="button"
           onClick={() => setFilter(filter === 'UNVERIFIED' ? 'ALL' : 'UNVERIFIED')}
-          className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-center transition-all cursor-pointer backdrop-blur-sm ${
             filter === 'UNVERIFIED'
-              ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-400 dark:border-amber-600 ring-2 ring-amber-300 dark:ring-amber-800'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700'
+              ? 'bg-amber-500/15 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/30 shadow-md shadow-amber-500/10'
+              : 'bg-white/80 dark:bg-[#0c0e14]/90 border-slate-200/90 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-600'
           }`}
         >
-          <div className="flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center justify-center gap-1.5 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider font-mono">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Unverified</span>
           </div>
-          <div className="text-2xl font-black text-amber-700 dark:text-amber-400 mt-1">{unverifiedCount}</div>
+          <div className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">{unverifiedCount}</div>
         </button>
       </div>
 
       {/* 3. INTERACTIVE LLM RESPONSE BOX WITH INLINE CITATIONS */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-850">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Evaluated LLM Response
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">
+              Evaluated LLM Response &bull; Claim Annotations
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-            Hover to preview evidence &bull; Click to illuminate claim
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline font-mono">
+            Hover to preview &bull; Click to illuminate
           </span>
         </div>
 
-        <div className="p-4 bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-lg">
+        <div className="p-4 bg-slate-50/70 dark:bg-[#08090c]/70 border border-slate-200/80 dark:border-slate-800 rounded-xl">
           <AnnotatedText
             text={result.llmAnswer}
             claims={result.claims}
