@@ -55,14 +55,14 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-slate-900 dark:text-slate-100 tracking-tight text-base font-sans">
+              <span className="font-sans font-extrabold text-slate-900 dark:text-slate-100 tracking-tight text-base">
                 VeriTrace
               </span>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
+              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
                 v0.1.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
+            <p className="text-[11px] font-sans font-normal text-slate-500 dark:text-slate-400 hidden sm:block">
               AI Observability &bull; LLM Hallucination Verification Engine
             </p>
           </div>
@@ -79,7 +79,7 @@ export const Navbar = ({ activeTab, onSelectTab }: NavbarProps) => {
                 key={link.id}
                 type="button"
                 onClick={() => onSelectTab(link.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-sans font-semibold rounded-lg transition-all cursor-pointer ${
                   isActive
                     ? 'bg-white dark:bg-[#151921] text-blue-600 dark:text-cyan-400 border border-slate-200/60 dark:border-slate-700/80 shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/50'

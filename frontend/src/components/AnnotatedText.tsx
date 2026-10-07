@@ -176,12 +176,12 @@ export const AnnotatedText = ({
           <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px] font-mono">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-300">
                 X-Ray Claim Telemetry
               </span>
             </div>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${
                 activeTooltipClaim.status === 'SUPPORTED'
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                   : activeTooltipClaim.status === 'CONTRADICTED'
@@ -193,13 +193,13 @@ export const AnnotatedText = ({
             </span>
           </div>
 
-          <p className="mt-2 text-slate-200 font-medium leading-relaxed">
+          <p className="mt-2 text-slate-200 font-sans font-medium text-xs leading-relaxed">
             &ldquo;{activeTooltipClaim.text}&rdquo;
           </p>
 
           {/* Radar / Confidence Bar */}
           <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="font-mono text-[10px] uppercase">NLI Entailment:</span>
+            <span className="font-mono text-[10px] uppercase font-semibold">NLI Entailment:</span>
             <div className="flex items-center gap-2">
               <div className="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
                 <div
@@ -213,22 +213,22 @@ export const AnnotatedText = ({
                   style={{ width: `${activeTooltipClaim.confidence}%` }}
                 />
               </div>
-              <span className="font-mono font-bold text-slate-200">{activeTooltipClaim.confidence}%</span>
+              <span className="font-sans font-bold text-xs text-slate-200">{activeTooltipClaim.confidence}%</span>
             </div>
           </div>
 
           {activeTooltipClaim.evidence?.[0] && (
             <div className="mt-2.5 text-[11px] text-slate-300 bg-slate-800/70 dark:bg-slate-900/80 rounded-lg p-2.5 border border-slate-700/60">
-              <div className="flex items-center justify-between text-blue-400 font-semibold mb-1">
+              <div className="flex items-center justify-between text-blue-400 font-sans font-semibold mb-1">
                 <span className="truncate flex items-center gap-1 text-[11px]">
                   <ExternalLink className="w-3 h-3 shrink-0" />
                   <span>Top Source: {activeTooltipClaim.evidence[0].sourceTitle}</span>
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 ml-2 shrink-0">
+                <span className="text-[10px] font-mono font-medium text-slate-400 ml-2 shrink-0">
                   {activeTooltipClaim.confidence}% NLI
                 </span>
               </div>
-              <p className="italic text-slate-300 line-clamp-2 text-[11px] leading-relaxed">
+              <p className="italic text-slate-300 font-sans font-normal line-clamp-2 text-[11px] leading-relaxed">
                 &ldquo;{activeTooltipClaim.evidence[0].snippet}&rdquo;
               </p>
             </div>

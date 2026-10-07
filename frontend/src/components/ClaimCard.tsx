@@ -73,16 +73,16 @@ export const ClaimCard = ({ claim, claimIndex, isTargeted = false }: ClaimCardPr
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5 flex-1">
           {claimIndex !== undefined && (
-            <span className="shrink-0 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 mt-0.5">
+            <span className="shrink-0 text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 mt-0.5">
               #{claimIndex}
             </span>
           )}
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">{claim.text}</p>
+          <p className="text-sm font-sans font-semibold text-slate-900 dark:text-slate-100 leading-snug">{claim.text}</p>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
           <span
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full border ${status.badgeClass}`}
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-mono font-semibold rounded-full border ${status.badgeClass}`}
             aria-label={`Claim status: ${status.label}`}
           >
             <StatusIcon className="w-3.5 h-3.5" />
@@ -104,10 +104,10 @@ export const ClaimCard = ({ claim, claimIndex, isTargeted = false }: ClaimCardPr
       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+            <span className="text-[11px] font-mono font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
               NLI Confidence:
             </span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">{claim.confidence}%</span>
+            <span className="font-sans font-bold text-slate-800 dark:text-slate-200">{claim.confidence}%</span>
             <div className="w-16 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${status.barColor}`}
@@ -116,7 +116,7 @@ export const ClaimCard = ({ claim, claimIndex, isTargeted = false }: ClaimCardPr
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+          <div className="hidden sm:flex items-center gap-1 text-[11px] font-sans font-normal text-slate-400 dark:text-slate-500">
             <FileText className="w-3 h-3" />
             <span>{claim.evidence?.length || 0} Evidence Sources</span>
           </div>
@@ -126,7 +126,7 @@ export const ClaimCard = ({ claim, claimIndex, isTargeted = false }: ClaimCardPr
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer"
+            className="flex items-center gap-1 text-[11px] font-sans font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer"
           >
             <span>{isExpanded ? 'Hide Sources' : `View Sources (${claim.evidence.length})`}</span>
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

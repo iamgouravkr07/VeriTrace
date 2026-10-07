@@ -169,7 +169,7 @@ Claims Evaluated: ${fullResult.claims.length}
 
             {/* Inner Truth Core Digital Readout */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pt-2">
-              <span className="font-mono text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              <span className="font-sans text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {animatedScore}
                 <span className="text-sm font-bold text-slate-400 ml-0.5">%</span>
               </span>
@@ -186,27 +186,27 @@ Claims Evaluated: ${fullResult.claims.length}
                 Observability Verdict
               </span>
               {model && (
-                <span className="font-mono text-[10px] tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
+                <span className="font-mono text-[10px] font-medium tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
                   {model}
                 </span>
               )}
             </div>
 
             <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md ${themeConfig.bgColor} ${themeConfig.textColor} ${themeConfig.borderColor}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-sans font-semibold border backdrop-blur-md ${themeConfig.bgColor} ${themeConfig.textColor} ${themeConfig.borderColor}`}
             >
               <SeverityIcon className="w-3.5 h-3.5" />
               <span className="tracking-wide">{severityBadge}</span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3.5 text-xs text-slate-500 dark:text-slate-400 pt-1 font-mono">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3.5 text-xs text-slate-500 dark:text-slate-400 pt-1 font-sans font-normal">
               {latencySeconds !== undefined && (
                 <span className="flex items-center gap-1 text-[11px]">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {latencySeconds}s SLA
+                  <span className="font-bold">{latencySeconds}s</span> SLA
                 </span>
               )}
-              <span className="flex items-center gap-1 text-[11px] text-blue-500 dark:text-blue-400">
+              <span className="flex items-center gap-1 text-[11px] text-blue-500 dark:text-blue-400 font-medium">
                 <Sparkles className="w-3.5 h-3.5" />
                 Cross-Verified
               </span>

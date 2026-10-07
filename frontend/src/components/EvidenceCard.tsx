@@ -31,11 +31,15 @@ export const EvidenceCard = ({
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+        <div className="flex items-center gap-1.5 font-sans font-semibold text-slate-800 dark:text-slate-200">
           <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-          <span className="text-slate-500 dark:text-slate-400">Source:</span>
+          <span className="font-sans font-normal text-slate-500 dark:text-slate-400">Source:</span>
           <span className="text-slate-900 dark:text-slate-100 truncate" title={evidence.sourceTitle}>
-            {evidenceIndex !== undefined ? `[#${evidenceIndex}] ` : ''}
+            {evidenceIndex !== undefined ? (
+              <span className="font-mono font-medium text-slate-500 dark:text-slate-400 mr-1">
+                [#{evidenceIndex}]
+              </span>
+            ) : null}
             {evidence.sourceTitle}
           </span>
         </div>
@@ -43,7 +47,7 @@ export const EvidenceCard = ({
         <button
           type="button"
           onClick={handleCopySnippet}
-          className="shrink-0 flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded transition-colors cursor-pointer"
+          className="shrink-0 flex items-center gap-1 px-2 py-0.5 text-[11px] font-sans font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded transition-colors cursor-pointer"
           title="Copy evidence snippet to clipboard"
         >
           {copied ? (
@@ -60,7 +64,7 @@ export const EvidenceCard = ({
         </button>
       </div>
 
-      <blockquote className="mt-2 text-slate-700 dark:text-slate-300 italic border-l-2 border-blue-400 dark:border-blue-500 pl-2.5 py-0.5 leading-relaxed text-[11px] font-sans">
+      <blockquote className="mt-2 text-slate-700 dark:text-slate-300 italic border-l-2 border-blue-400 dark:border-blue-500 pl-2.5 py-0.5 leading-relaxed text-[11px] font-sans font-normal">
         &ldquo;{evidence.snippet}&rdquo;
       </blockquote>
     </div>

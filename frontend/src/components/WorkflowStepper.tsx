@@ -126,10 +126,10 @@ export const WorkflowStepper = ({
 
                 {/* Stage Title and Description */}
                 <div>
-                  <p className="text-xs font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                  <p className="text-xs font-sans font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                     {step.title}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <p className="text-[10px] font-sans font-normal text-slate-500 dark:text-slate-400 truncate mt-0.5">
                     {step.desc}
                   </p>
                 </div>
