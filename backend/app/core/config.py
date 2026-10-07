@@ -1,0 +1,44 @@
+import os
+from typing import Dict
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+
+class Settings:
+    PROJECT_NAME: str = "VeriTrace"
+    VERSION: str = "0.1.0"
+    API_V1_PREFIX: str = "/api/v1"
+
+    # Gemini LLM Settings
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "").strip()
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+    LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "30.0"))
+    LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.0"))
+
+    # Demo Mode
+    DEMO_MODE_DEFAULT: bool = os.getenv("DEMO_MODE_DEFAULT", "false").lower() in ("true", "1", "yes")
+
+    # Scoring Weights (configurable prototype formula)
+    # confidence = 0.5 * nli_confidence + 0.3 * retrieval_relevance + 0.2 * source_reliability
+    WEIGHT_NLI: float = float(os.getenv("WEIGHT_NLI", "0.5"))
+    WEIGHT_RETRIEVAL: float = float(os.getenv("WEIGHT_RETRIEVAL", "0.3"))
+    WEIGHT_SOURCE: float = float(os.getenv("WEIGHT_SOURCE", "0.2"))
+
+    # Risk Penalty per Status (prototype values)
+    # SUPPORTED -> 0.0, INSUFFICIENT -> 0.5, CONTRADICTED -> 1.0
+    RISK_PENALTY_MAP: Dict[str, float] = {
+        "SUPPORTED": 0.0,
+        "INSUFFICIENT": 0.5,
+        "CONTRADICTED": 1.0,
+    }
+
+    # Risk Level Thresholds:
+    # 0-20 LOW, 21-50 MEDIUM, 51-80 HIGH, 81-100 CRITICAL
+    THRESHOLD_LOW_MAX: float = float(os.getenv("THRESHOLD_LOW_MAX", "20.0"))
+    THRESHOLD_MEDIUM_MAX: float = float(os.getenv("THRESHOLD_MEDIUM_MAX", "50.0"))
+    THRESHOLD_HIGH_MAX: float = float(os.getenv("THRESHOLD_HIGH_MAX", "80.0"))
+
+
+settings = Settings()
