@@ -20,6 +20,7 @@ export interface VerificationResponse {
   hallucinationRisk: number;
   claims: Claim[];
   latencySeconds: number;
+  model?: string;
 }
 
 export interface BenchmarkMetrics {
@@ -35,9 +36,25 @@ export interface VerificationRequest {
   query: string;
   llmAnswer?: string;
   contextDocument?: string;
+  model?: string;
 }
+
 
 export interface BackendHealth {
   status: string;
   service?: string;
-}
+}
+
+export interface VerificationHistoryItem {
+  id: string;
+  query: string;
+  llmAnswer: string;
+  model: string;
+  hallucinationRisk: number;
+  status: 'SUPPORTED' | 'CONTRADICTED' | 'MIXED';
+  timestamp: string;
+  latencySeconds: number;
+  claimsCount: number;
+  presetKey?: string;
+}
+

@@ -157,19 +157,28 @@ export async function verifyText(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      // TODO: Backend Member 1 integration point (/api/verify or /verify)
-      const res = await fetch(`${API_BASE_URL}/api/verify`, {
+      // Attempt FastAPI backend endpoints: /api/v1/verify then fallback to /api/verify
+      let res = await fetch(`${API_BASE_URL}/api/v1/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
         signal: controller.signal,
-      });
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await fetch(`${API_BASE_URL}/api/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        }).catch(() => null);
+      }
       clearTimeout(timeoutId);
 
-      if (res.ok) {
+      if (res && res.ok) {
         const liveData = (await res.json()) as VerificationResponse;
         return {
-          data: liveData,
+          data: { ...liveData, model: request?.model || liveData.model || 'gpt-4o' },
           isLiveBackend: true,
         };
       }
@@ -191,34 +200,41 @@ export async function verifyText(
   }
 
   // If user entered a custom query that couldn't reach backend, return the selected preset with user's query
-  const responseData: VerificationResponse = queryText
-    ? { ...selectedPreset, query: queryText }
-    : selectedPreset;
+  const responseData: VerificationResponse = {
+    ...(queryText ? { ...selectedPreset, query: queryText } : selectedPreset),
+    model: request?.model || 'gpt-4o',
+  };
 
   return {
     data: responseData,
     isLiveBackend: false,
-    notice: 'Demo mode active: backend endpoint is not yet reachable.',
+    notice: 'Offline demo mode active: /api/v1/verify backend endpoint not reachable.',
   };
 }
 
 /**
  * Fetches evaluation benchmark metrics.
- * Attempts backend API first, falling back to baseline benchmark metrics.
+ * Attempts /api/v1/evaluation first, falling back to /api/evaluation or baseline metrics.
  */
 export async function fetchEvaluationMetrics(): Promise<BenchmarkMetrics> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    // TODO: Backend Member 1 integration point (/api/evaluation)
-    const res = await fetch(`${API_BASE_URL}/api/evaluation`, {
+    let res = await fetch(`${API_BASE_URL}/api/v1/evaluation`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
-    });
+    }).catch(() => null);
+
+    if (!res || !res.ok) {
+      res = await fetch(`${API_BASE_URL}/api/evaluation`, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      }).catch(() => null);
+    }
     clearTimeout(timeoutId);
 
-    if (res.ok) {
+    if (res && res.ok) {
       return (await res.json()) as BenchmarkMetrics;
     }
   } catch {
@@ -227,4 +243,5 @@ export async function fetchEvaluationMetrics(): Promise<BenchmarkMetrics> {
 
   await new Promise((res) => setTimeout(res, 300));
   return MOCK_BENCHMARK;
-}
+}
+

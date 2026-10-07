@@ -1,77 +1,98 @@
+import {
+  FileDown,
+  Split,
+  Database,
+  ShieldCheck,
+  Gauge,
+  Check,
+} from 'lucide-react';
+
+export type PipelineStage = 1 | 2 | 3 | 4 | 5;
+
 interface WorkflowStepperProps {
-  currentStage: 'input' | 'analyzing' | 'completed';
+  currentStage?: PipelineStage;
+  isCompleted?: boolean;
 }
 
-export const WorkflowStepper = ({ currentStage }: WorkflowStepperProps) => {
+export const WorkflowStepper = ({
+  currentStage = 1,
+  isCompleted = false,
+}: WorkflowStepperProps) => {
   const steps = [
-    { id: 1, title: 'User Input', desc: 'Query / Response' },
-    { id: 2, title: 'Analysis', desc: 'Atomic Claim Extraction' },
-    { id: 3, title: 'Evidence', desc: 'Retrieval & NLI' },
-    { id: 4, title: 'Final Verdict', desc: 'Hallucination Risk' },
+    { id: 1, title: 'Ingestion', desc: 'Query & Assertion Input', icon: FileDown },
+    { id: 2, title: 'Claim Extraction', desc: 'Atomic Proposition Splitting', icon: Split },
+    { id: 3, title: 'Source Retrieval', desc: 'Vector & Keyword Search', icon: Database },
+    { id: 4, title: 'Cross-Verification', desc: 'NLI Entailment & Contradiction', icon: ShieldCheck },
+    { id: 5, title: 'Risk Scoring', desc: 'Hallucination Severity Meter', icon: Gauge },
   ];
 
-  const getStepStatus = (stepId: number) => {
-    if (currentStage === 'completed') return 'completed';
-    if (currentStage === 'analyzing') {
-      if (stepId <= 3) return 'active';
-      return 'pending';
-    }
-    // 'input' stage
-    if (stepId === 1) return 'active';
+  const getStepState = (stepId: number) => {
+    if (isCompleted) return 'completed';
+    if (stepId < currentStage) return 'completed';
+    if (stepId === currentStage) return 'active';
     return 'pending';
   };
 
   return (
     <div
-      className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 mb-6 shadow-xs"
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors duration-200"
       aria-label="VeriTrace Pipeline Workflow"
     >
-      <div className="flex items-center justify-between text-xs mb-2">
-        <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">
-          Pipeline Flow
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
+          Verification Pipeline Architecture
         </span>
-        <span className="text-[11px] text-slate-400">
-          {currentStage === 'completed'
-            ? '✓ Verification Complete'
-            : currentStage === 'analyzing'
-              ? '⚡ Analyzing Claims...'
-              : 'Waiting for Input'}
+        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+          {isCompleted
+            ? '✓ Pipeline Run Complete'
+            : `Executing Stage ${currentStage} of 5`}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {steps.map((step) => {
-          const status = getStepStatus(step.id);
+          const state = getStepState(step.id);
+          const Icon = step.icon;
+
           return (
             <div
               key={step.id}
-              className={`p-2.5 rounded-lg border text-left transition-all ${
-                status === 'completed'
-                  ? 'border-emerald-200 bg-emerald-50/50 text-slate-800'
-                  : status === 'active'
-                    ? 'border-blue-300 bg-blue-50/60 text-blue-950 ring-1 ring-blue-300'
-                    : 'border-slate-100 bg-slate-50/60 text-slate-400'
+              className={`p-3 rounded-lg border text-left transition-all duration-300 relative ${
+                state === 'completed'
+                  ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/40 text-slate-900 dark:text-slate-100 shadow-2xs'
+                  : state === 'active'
+                    ? 'border-blue-400 dark:border-blue-600 bg-blue-50/80 dark:bg-blue-950/70 text-blue-950 dark:text-blue-100 ring-2 ring-blue-300 dark:ring-blue-800 shadow-xs'
+                    : 'border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/50 text-slate-400 dark:text-slate-500'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <span
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    status === 'completed'
-                      ? 'bg-emerald-600 text-white'
-                      : status === 'active'
-                        ? 'bg-blue-600 text-white animate-pulse'
-                        : 'bg-slate-200 text-slate-500'
+                  className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold transition-colors ${
+                    state === 'completed'
+                      ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
+                      : state === 'active'
+                        ? 'bg-blue-600 dark:bg-blue-500 text-white animate-pulse'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  {status === 'completed' ? '✓' : step.id}
+                  {state === 'completed' ? <Check className="w-3.5 h-3.5" /> : step.id}
                 </span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
-                  Step {step.id}
-                </span>
+
+                <Icon
+                  className={`w-4 h-4 ${
+                    state === 'completed'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : state === 'active'
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-slate-300 dark:text-slate-600'
+                  }`}
+                />
               </div>
-              <div className="mt-2">
-                <p className="text-xs font-semibold leading-tight">{step.title}</p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">{step.desc}</p>
+
+              <div>
+                <p className="text-xs font-bold leading-snug">{step.title}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{step.desc}</p>
               </div>
             </div>
           );
