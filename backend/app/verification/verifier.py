@@ -25,8 +25,12 @@ class ClaimVerifier(Protocol):
         Expected return format:
         {
             "status": "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT",
+            "verdict": "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT_EVIDENCE",
             "confidence": 0.94,
-            "reasoning": "Optional explanation"
+            "hallucination_risk": 0.08,
+            "reasoning": "Optional explanation",
+            "supporting_evidence": [...],
+            "contradicting_evidence": [...]
         }
         """
         ...
@@ -35,7 +39,11 @@ class ClaimVerifier(Protocol):
 class StubClaimVerifier:
     """Default fallback verifier when live NLI engine is not connected."""
 
-    def __init__(self, default_status: VerificationStatus = VerificationStatus.INSUFFICIENT, default_confidence: float = 0.5):
+    def __init__(
+        self,
+        default_status: VerificationStatus = VerificationStatus.INSUFFICIENT,
+        default_confidence: float = 0.5,
+    ):
         self.default_status = default_status
         self.default_confidence = default_confidence
 
@@ -48,11 +56,13 @@ class StubClaimVerifier:
         if not evidence:
             return {
                 "status": VerificationStatus.INSUFFICIENT.value,
+                "verdict": VerificationStatus.INSUFFICIENT.value,
                 "confidence": 0.5,
                 "reasoning": "No evidence retrieved to support or refute the claim.",
             }
         return {
             "status": self.default_status.value,
+            "verdict": self.default_status.value,
             "confidence": self.default_confidence,
             "reasoning": "Evaluated via fallback stub verifier.",
         }
@@ -62,10 +72,14 @@ def normalize_verification_output(
     raw_result: Dict[str, Any],
 ) -> Tuple[VerificationStatus, float, Optional[str]]:
     """Safely parse Member 4's verification output into validated status and confidence."""
-    raw_status = str(raw_result.get("status", "INSUFFICIENT")).upper().strip()
-    try:
-        status = VerificationStatus(raw_status)
-    except ValueError:
+    raw_status = str(raw_result.get("status") or raw_result.get("verdict") or "INSUFFICIENT").upper().strip()
+    if raw_status in ("INSUFFICIENT_EVIDENCE", "NEUTRAL", "UNVERIFIED", "INSUFFICIENT"):
+        status = VerificationStatus.INSUFFICIENT
+    elif raw_status == "SUPPORTED":
+        status = VerificationStatus.SUPPORTED
+    elif raw_status == "CONTRADICTED":
+        status = VerificationStatus.CONTRADICTED
+    else:
         logger.warning("Unrecognized verification status '%s'; defaulting to INSUFFICIENT", raw_status)
         status = VerificationStatus.INSUFFICIENT
 

@@ -16,15 +16,16 @@ from app.retrieval.interface import (
     normalize_retrieval_output,
 )
 from app.schemas.claim import ClaimVerificationResult, ExtractedClaim
+from app.schemas.evidence import Citation, convert_to_citations
 from app.schemas.request import VerifyRequest
 from app.schemas.response import VerifyResponse
 from app.schemas.verification import RiskLevel, VerificationStatus
 from app.scoring.risk import calculate_overall_risk
 from app.services.demo import DemoService
 from app.verification.confidence import calculate_confidence
+from app.verification.service import VerificationService
 from app.verification.verifier import (
     ClaimVerifier,
-    StubClaimVerifier,
     normalize_verification_output,
 )
 
@@ -43,7 +44,7 @@ class VerificationOrchestrator:
     ):
         self.claim_extractor = claim_extractor or ClaimExtractor()
         self.retriever = retriever or StubRetriever()
-        self.verifier = verifier or StubClaimVerifier()
+        self.verifier = verifier or VerificationService()
         self.demo_service = demo_service or DemoService()
 
     def verify_answer(self, request: VerifyRequest) -> VerifyResponse:
@@ -89,10 +90,19 @@ class VerificationOrchestrator:
                 logger.error("Retrieval failed for claim '%s': %s", claim.text, e)
                 evidence_items = []
 
-            # 3. Verify claim against evidence
+            # 3. Verify claim against evidence using Member 4 Verifier
+            hallucination_risk = None
+            supporting_citations: List[Citation] = []
+            contradicting_citations: List[Citation] = []
             try:
                 raw_verification = self.verifier.verify_claim(claim.text, evidence_items)
                 status, nli_conf, reasoning = normalize_verification_output(raw_verification)
+                if isinstance(raw_verification, dict):
+                    hallucination_risk = raw_verification.get("hallucination_risk")
+                    raw_supporting = raw_verification.get("supporting_evidence")
+                    raw_contradicting = raw_verification.get("contradicting_evidence")
+                    supporting_citations = convert_to_citations(raw_supporting)
+                    contradicting_citations = convert_to_citations(raw_contradicting)
             except Exception as e:
                 logger.error("Verification failed for claim '%s': %s", claim.text, e)
                 status = VerificationStatus.INSUFFICIENT
@@ -111,7 +121,7 @@ class VerificationOrchestrator:
                 source_reliability=1.0,
             )
 
-            # Build citations
+            # Build citations (existing retrieval citations behavior remains unchanged)
             citations = [item.to_citation() for item in evidence_items]
 
             verified_claims.append(
@@ -119,8 +129,12 @@ class VerificationOrchestrator:
                     id=claim.id,
                     text=claim.text,
                     status=status,
+                    verdict=status,
                     confidence=combined_confidence,
+                    hallucination_risk=hallucination_risk,
                     citations=citations,
+                    supporting_evidence=supporting_citations,
+                    contradicting_evidence=contradicting_citations,
                     reasoning=reasoning,
                 )
             )
