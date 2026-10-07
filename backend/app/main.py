@@ -7,7 +7,11 @@ app = FastAPI(
     title="VeriTrace API",
     description="Hallucination Detection and Verification Middleware",
     version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
+
 
 # Standard CORS configuration
 app.add_middleware(
