@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+venv/
+.venv/
+*.egg-info/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ML models
+models/
+checkpoints/
+*.pt
+*.pth
+*.bin
+
+# Generated benchmark results
+benchmark/results/*
+!benchmark/results/.gitkeep
+
+# Uploaded documents
+documents/demo/*
+!documents/demo/.gitkeep
