@@ -158,10 +158,12 @@ export async function verifyText(
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       // TODO: Backend Member 1 integration point (/api/verify or /verify)
-      const res = await fetch(`${API_BASE_URL}/api/verify`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
+        body: JSON.stringify({
+          question: request?.query || '',
+          answer: request?.llmAnswer || '',}),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -227,4 +229,4 @@ export async function fetchEvaluationMetrics(): Promise<BenchmarkMetrics> {
 
   await new Promise((res) => setTimeout(res, 300));
   return MOCK_BENCHMARK;
-}
+}
