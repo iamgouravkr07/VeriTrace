@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from pydantic import ValidationError
 
 from app.core.exceptions import ClaimExtractionError, LLMError
-from app.llm.gateway import LLMGateway
+from app.llm.gateway import LLMGateway, get_llm_gateway
 from app.llm.gemini import GeminiGateway
 from app.llm.prompts import (
     CLAIM_EXTRACTION_SYSTEM_PROMPT,
@@ -24,7 +24,7 @@ class ClaimExtractor:
         gateway: Optional[LLMGateway] = None,
         allow_rule_fallback: bool = True,
     ):
-        self.gateway = gateway or GeminiGateway()
+        self.gateway = gateway or get_llm_gateway()
         self.allow_rule_fallback = allow_rule_fallback
 
     def extract_claims(

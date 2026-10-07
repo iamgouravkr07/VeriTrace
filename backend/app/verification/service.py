@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from app.core.exceptions import LLMError
-from app.llm.gateway import LLMGateway
+from app.llm.gateway import LLMGateway, get_llm_gateway
 from app.llm.gemini import GeminiGateway
 from app.schemas.evidence import EvidenceItem
 from app.verification.models import (
@@ -30,7 +30,7 @@ class VerificationService:
     """
 
     def __init__(self, gateway: Optional[LLMGateway] = None):
-        self.gateway = gateway or GeminiGateway()
+        self.gateway = gateway or get_llm_gateway()
 
     def verify(
         self,
