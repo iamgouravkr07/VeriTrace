@@ -1,4 +1,7 @@
+from typing import Any, Dict, List, Union
 from pydantic import BaseModel, Field, field_validator
+
+from app.schemas.evidence import EvidenceItem
 
 
 class VerifyRequest(BaseModel):
@@ -31,4 +34,25 @@ class VerifyRequest(BaseModel):
         stripped = v.strip()
         if not stripped:
             raise ValueError("answer cannot be empty or whitespace only")
+        return stripped
+
+
+class VerifyClaimRequest(BaseModel):
+    """Direct standalone verification request for an individual claim against evidence."""
+    claim: str = Field(
+        ...,
+        description="The factual claim to verify",
+        examples=["Sydney is the capital of Australia."],
+    )
+    evidence: List[Union[EvidenceItem, Dict[str, Any]]] = Field(
+        default_factory=list,
+        description="List of retrieved evidence passages",
+    )
+
+    @field_validator("claim")
+    @classmethod
+    def validate_claim_not_empty(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("claim cannot be empty or whitespace only")
         return stripped

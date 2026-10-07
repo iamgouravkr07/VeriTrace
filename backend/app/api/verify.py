@@ -12,16 +12,19 @@ from app.core.exceptions import (
     VerificationError,
     VeriTraceException,
 )
-from app.schemas.request import VerifyRequest
+from app.schemas.request import VerifyClaimRequest, VerifyRequest
 from app.schemas.response import VerifyResponse
 from app.services.orchestrator import VerificationOrchestrator
+from app.verification.models import SingleClaimVerificationResult
+from app.verification.service import VerificationService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Verification"])
 
-# Default singleton orchestrator instance (can be overridden in tests via dependency overrides)
+# Singletons (can be overridden in tests via dependency overrides)
 _default_orchestrator: VerificationOrchestrator = None
+_default_verification_service: VerificationService = None
 
 
 def get_orchestrator() -> VerificationOrchestrator:
@@ -29,6 +32,13 @@ def get_orchestrator() -> VerificationOrchestrator:
     if _default_orchestrator is None:
         _default_orchestrator = VerificationOrchestrator()
     return _default_orchestrator
+
+
+def get_verification_service() -> VerificationService:
+    global _default_verification_service
+    if _default_verification_service is None:
+        _default_verification_service = VerificationService()
+    return _default_verification_service
 
 
 @router.post(
@@ -93,4 +103,25 @@ def verify_answer_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error occurred.",
+        ) from e
+
+
+@router.post(
+    "/verify/claim",
+    response_model=SingleClaimVerificationResult,
+    status_code=status.HTTP_200_OK,
+    summary="Verify an individual claim directly against evidence (Member 4)",
+    description="Direct NLI verification service evaluating whether supplied evidence supports, contradicts, or is insufficient for a claim.",
+)
+def verify_claim_endpoint(
+    request: VerifyClaimRequest,
+    service: VerificationService = Depends(get_verification_service),
+) -> SingleClaimVerificationResult:
+    try:
+        return service.verify(claim=request.claim, evidence=request.evidence)
+    except Exception as e:
+        logger.exception("Unhandled exception during single claim verification: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error during claim verification.",
         ) from e
