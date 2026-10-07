@@ -1,0 +1,22 @@
+[
+  {
+    "claim": "Sydney is the capital of Australia.",
+    "evidence": "Canberra is the capital of Australia.",
+    "label": "CONTRADICTED"
+  },
+  {
+    "claim": "Guido van Rossum created Python.",
+    "evidence": "Python was created by Guido van Rossum in 1991.",
+    "label": "SUPPORTED"
+  },
+  {
+    "claim": "Python was released in 1999.",
+    "evidence": "Python was first released in 1991 by Guido van Rossum.",
+    "label": "CONTRADICTED"
+  },
+  {
+    "claim": "The company revenue grew by 25% in Q3.",
+    "evidence": "The company released its new software update in Q3.",
+    "label": "INSUFFICIENT"
+  }
+]
