@@ -98,25 +98,21 @@ class WebRetriever:
         )
 
         evidence = []
-
-        for document, score in results:
-            item = self._metadata.get(
-                document.document_id,
-                {},
-            )
-
-            evidence.append(
-                {
-                    "id": document.document_id,
-                    "text": document.text,
-                    "source_type": "web",
-                    "title": item.get("title"),
-                    "url": item.get("url"),
-                    "relevance_score": round(
-                        score,
-                        4,
-                    ),
-                }
-            )
+        for res in results:
+            if isinstance(res, dict):
+                evidence.append(res)
+            elif isinstance(res, (tuple, list)) and len(res) == 2:
+                document, score = res
+                item = self._metadata.get(document.document_id, {})
+                evidence.append(
+                    {
+                        "id": document.document_id,
+                        "text": document.text,
+                        "source_type": "web",
+                        "title": item.get("title"),
+                        "url": item.get("url"),
+                        "relevance_score": round(score, 4),
+                    }
+                )
 
         return evidence

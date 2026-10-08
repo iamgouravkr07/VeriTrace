@@ -48,7 +48,7 @@ class TestGrokGateway(unittest.TestCase):
         self.assertEqual(result, "This is a response from Grok.")
         mock_client.post.assert_called_once()
         call_kwargs = mock_client.post.call_args.kwargs
-        self.assertEqual(call_kwargs["json"]["model"], "grok-4.7")
+        self.assertEqual(call_kwargs["json"]["model"], "grok-2-latest")
         self.assertEqual(len(call_kwargs["json"]["messages"]), 2)
         self.assertEqual(call_kwargs["json"]["messages"][0]["role"], "system")
         self.assertEqual(call_kwargs["json"]["messages"][1]["role"], "user")
@@ -112,6 +112,22 @@ class TestGrokGateway(unittest.TestCase):
         self.assertIn("xAI authentication failed", str(ctx.exception))
         # Ensure secret is not in exception
         self.assertNotIn("invalid-xai-key", str(ctx.exception))
+
+    def test_http_403_permission_denied_credits_error(self):
+        mock_client = MagicMock(spec=httpx.Client)
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 403
+        mock_response.json.return_value = {
+            "code": "permission-denied",
+            "error": "Your newly created team doesn't have any credits or licenses yet.",
+        }
+        mock_client.post.return_value = mock_response
+
+        gw = GrokGateway(api_key="valid-team-no-credits-key", client=mock_client)
+        with self.assertRaises(LLMQuotaExceededError) as ctx:
+            gw.generate_text("test")
+        self.assertIn("credits", str(ctx.exception).lower())
+        self.assertNotIn("valid-team-no-credits-key", str(ctx.exception))
 
     def test_http_429_rate_limit(self):
         mock_client = MagicMock(spec=httpx.Client)

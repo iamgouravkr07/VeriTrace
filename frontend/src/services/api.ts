@@ -209,16 +209,55 @@ export async function verifyText(
       clearTimeout(timeoutId);
 
       if (res && res.ok) {
-        const liveData = (await res.json()) as VerificationResponse;
+        const raw = await res.json();
+        const transformedClaims: any[] = (raw.claims || []).map((c: any) => {
+          let status = 'UNVERIFIED';
+          if (c.status === 'SUPPORTED' || c.verdict === 'SUPPORTED') {
+            status = 'SUPPORTED';
+          } else if (c.status === 'CONTRADICTED' || c.verdict === 'CONTRADICTED') {
+            status = 'CONTRADICTED';
+          }
+
+          const rawCitations = c.citations || c.evidence || c.supporting_evidence || [];
+          const evidenceItems = rawCitations.map((item: any, idx: number) => ({
+            id: `ev-${c.id}-${idx + 1}`,
+            sourceTitle: item.source || item.sourceTitle || 'Verified Document',
+            snippet: item.evidence || item.text || item.snippet || '',
+          }));
+
+          const rawConf = typeof c.confidence === 'number' ? c.confidence : 0.5;
+          const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
+
+          return {
+            id: c.id,
+            text: c.text,
+            status,
+            confidence,
+            evidence: evidenceItems,
+          };
+        });
+
+        const latencySeconds =
+          typeof raw.execution_time_ms === 'number'
+            ? Math.round((raw.execution_time_ms / 1000) * 10) / 10
+            : (raw.latencySeconds || 1.5);
+
+        const hallucinationRisk =
+          typeof raw.overall_risk === 'number'
+            ? Math.round(raw.overall_risk)
+            : (raw.hallucinationRisk || 0);
+
+        const liveData: VerificationResponse = {
+          query: request?.query || '',
+          llmAnswer: request?.llmAnswer || '',
+          hallucinationRisk,
+          claims: transformedClaims,
+          latencySeconds,
+          model: request?.model || 'gemini',
+        };
 
         return {
-          data: {
-            ...liveData,
-            model:
-              request?.model ||
-              liveData.model ||
-              'gpt-4o',
-          },
+          data: liveData,
           isLiveBackend: true,
         };
       }

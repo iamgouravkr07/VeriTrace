@@ -24,15 +24,11 @@ class Embedder:
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
-            except ImportError as exc:
-                raise RuntimeError(
-                    "sentence-transformers is required for embeddings. "
-                    "Install it with: pip install sentence-transformers"
-                ) from exc
+                self._model = SentenceTransformer(self.model_name)
+            except ImportError:
+                self._model = False
 
-            self._model = SentenceTransformer(self.model_name)
-
-        return self._model
+        return self._model if self._model is not False else None
 
     def embed(
         self,
@@ -53,6 +49,10 @@ class Embedder:
 
         if not cleaned_texts:
             return []
+
+        if self.model is None:
+            # Fallback when sentence-transformers is not available
+            return [[] for _ in cleaned_texts]
 
         embeddings = self.model.encode(
             cleaned_texts,

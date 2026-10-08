@@ -131,25 +131,41 @@ class VerificationService:
             text = ""
             source = "Unknown Source"
             url = None
+            page = None
             relevance = 0.0
+            doc_id = None
+            doc_name = None
+            chunk_id = None
 
             if isinstance(item, EvidenceReference):
                 source_id = item.source_id or source_id
                 text = item.text
                 source = item.source or source
                 url = item.url
+                page = item.page
                 relevance = item.relevance
+                doc_id = item.document_id
+                doc_name = item.document_name
+                chunk_id = item.chunk_id
             elif isinstance(item, EvidenceItem):
                 text = item.text
                 source = item.source or source
                 url = item.url
+                page = item.page
                 relevance = item.relevance_score
+                doc_id = item.document_id
+                doc_name = item.document_name
+                chunk_id = item.chunk_id
             elif isinstance(item, dict):
                 source_id = str(item.get("source_id") or item.get("id") or source_id)
                 text = str(item.get("text") or item.get("evidence") or "")
-                source = str(item.get("source") or source)
+                source = str(item.get("source") or item.get("document_name") or source)
                 url = item.get("url")
+                page = item.get("page")
                 raw_rel = item.get("relevance") or item.get("relevance_score") or 0.0
+                doc_id = item.get("document_id")
+                doc_name = item.get("document_name")
+                chunk_id = item.get("chunk_id")
                 try:
                     relevance = float(raw_rel)
                 except (ValueError, TypeError):
@@ -171,7 +187,11 @@ class VerificationService:
                     text=text,
                     source=source,
                     url=url,
+                    page=page,
                     relevance=round(max(0.0, min(1.0, relevance)), 4),
+                    document_id=doc_id,
+                    document_name=doc_name,
+                    chunk_id=chunk_id,
                 )
             )
 

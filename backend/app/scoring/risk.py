@@ -1,8 +1,18 @@
-from typing import Dict, List, Optional, Tuple, Union
+import math
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from app.core.config import settings
 from app.schemas.claim import ClaimVerificationResult
 from app.schemas.verification import RiskLevel, VerificationStatus
+
+
+def _clean_float(val: Any, default: float = 0.0) -> float:
+    """Safely convert any value to float, replacing NaN and Inf with default."""
+    try:
+        f = float(val)
+        return default if (math.isnan(f) or math.isinf(f)) else f
+    except (TypeError, ValueError):
+        return default
 
 
 def determine_risk_level(
@@ -12,15 +22,16 @@ def determine_risk_level(
     threshold_high: Optional[float] = None,
 ) -> RiskLevel:
     """Classify a 0-100 risk score into a categorical RiskLevel."""
-    low_max = threshold_low if threshold_low is not None else settings.THRESHOLD_LOW_MAX
-    med_max = threshold_medium if threshold_medium is not None else settings.THRESHOLD_MEDIUM_MAX
-    high_max = threshold_high if threshold_high is not None else settings.THRESHOLD_HIGH_MAX
+    score = _clean_float(risk_score, 0.0)
+    low_max = _clean_float(threshold_low if threshold_low is not None else settings.THRESHOLD_LOW_MAX, 20.0)
+    med_max = _clean_float(threshold_medium if threshold_medium is not None else settings.THRESHOLD_MEDIUM_MAX, 50.0)
+    high_max = _clean_float(threshold_high if threshold_high is not None else settings.THRESHOLD_HIGH_MAX, 80.0)
 
-    if risk_score <= low_max:
+    if score <= low_max:
         return RiskLevel.LOW
-    elif risk_score <= med_max:
+    elif score <= med_max:
         return RiskLevel.MEDIUM
-    elif risk_score <= high_max:
+    elif score <= high_max:
         return RiskLevel.HIGH
     else:
         return RiskLevel.CRITICAL
@@ -38,9 +49,6 @@ def calculate_overall_risk(
         CONTRADICTED -> 1.0 penalty
 
         overall_risk = (penalty_sum / count) * 100
-
-    Note: These are initial heuristic thresholds and scoring rules meant
-    to be calibrated against evaluation benchmarks.
     """
     if not claims:
         return 0.0, RiskLevel.LOW
@@ -58,10 +66,10 @@ def calculate_overall_risk(
         else:
             status_key = "INSUFFICIENT"
 
-        penalty = penalties.get(status_key, 0.5)
-        total_penalty += penalty
+        raw_penalty = penalties.get(status_key, 0.5)
+        total_penalty += _clean_float(raw_penalty, 0.5)
 
     raw_risk = (total_penalty / len(claims)) * 100.0
-    risk_score = round(max(0.0, min(100.0, raw_risk)), 2)
+    risk_score = round(max(0.0, min(100.0, _clean_float(raw_risk, 0.0))), 2)
     level = determine_risk_level(risk_score)
     return risk_score, level

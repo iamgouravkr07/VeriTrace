@@ -28,8 +28,9 @@ class GrokGateway(LLMGateway):
         timeout: Optional[float] = None,
         client: Optional[httpx.Client] = None,
     ):
-        self.api_key = api_key if api_key is not None else settings.XAI_API_KEY
-        self.model_name = model_name or settings.GROK_MODEL
+        raw_key = api_key if api_key is not None else settings.XAI_API_KEY
+        self.api_key = raw_key.strip() if raw_key else ""
+        self.model_name = (model_name or settings.GROK_MODEL).strip()
         self.base_url = (base_url or settings.XAI_BASE_URL).rstrip("/")
         self.timeout = timeout if timeout is not None else settings.LLM_TIMEOUT_SECONDS
         self._client = client
@@ -86,9 +87,23 @@ class GrokGateway(LLMGateway):
             raise LLMAPIError(f"Failed to communicate with xAI API: {type(e).__name__}") from e
 
         # Handle HTTP error statuses
-        if response.status_code == 401 or response.status_code == 403:
-            logger.error("xAI authentication failed (HTTP %d)", response.status_code)
+        if response.status_code == 401:
+            logger.error("xAI authentication failed (HTTP 401)")
             raise LLMConfigurationError("xAI authentication failed: Invalid or unauthorized XAI_API_KEY.")
+
+        if response.status_code == 403:
+            detail = ""
+            try:
+                err_data = response.json()
+                detail = err_data.get("error") or err_data.get("message") or ""
+            except Exception:
+                detail = response.text[:200]
+            logger.error("xAI access forbidden (HTTP 403): %s", detail)
+            if "credit" in detail.lower() or "license" in detail.lower() or "permission-denied" in detail.lower():
+                raise LLMQuotaExceededError(
+                    f"xAI quota/license error (HTTP 403): {detail}. Please add credits at console.x.ai."
+                )
+            raise LLMConfigurationError(f"xAI authentication failed: {detail or 'Access denied'}")
 
         if response.status_code == 429:
             logger.warning("xAI rate limit / quota exceeded (HTTP 429)")

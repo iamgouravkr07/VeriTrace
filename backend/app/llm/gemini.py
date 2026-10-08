@@ -66,8 +66,12 @@ class GeminiGateway(LLMGateway):
         timeout: Optional[float] = None,
         client: Optional[Any] = None,
     ):
-        self.api_key = api_key if api_key is not None else settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.GEMINI_MODEL
+        raw_key = api_key if api_key is not None else settings.GEMINI_API_KEY
+        self.api_key = raw_key.strip() if raw_key else ""
+        raw_model = (model_name or settings.GEMINI_MODEL).strip()
+        if raw_model.startswith("models/"):
+            raw_model = raw_model[len("models/"):]
+        self.model_name = raw_model
         self.timeout = timeout if timeout is not None else settings.LLM_TIMEOUT_SECONDS
         self._client = client
 
@@ -88,6 +92,62 @@ class GeminiGateway(LLMGateway):
             logger.error("Failed to initialize Google GenAI client: %s", e)
             raise LLMConfigurationError(f"Could not initialize Gemini client: {e}") from e
 
+    def _call_generate_content(self, client: Any, contents: Any, config: Any) -> Any:
+        try:
+            return client.models.generate_content(
+                model=self.model_name,
+                contents=contents,
+                config=config,
+            )
+        except Exception as e:
+            err_str = str(e)
+            is_recoverable_model_error = (
+                "404" in err_str
+                or "503" in err_str
+                or "429" in err_str
+                or "RESOURCE_EXHAUSTED" in err_str
+                or "quota" in err_str.lower()
+                or "NOT_FOUND" in err_str
+                or "UNAVAILABLE" in err_str
+                or "no longer available" in err_str.lower()
+            )
+            if is_recoverable_model_error:
+                fallback_model = (
+                    "gemini-3.5-flash"
+                    if self.model_name in ("gemini-flash-latest", "gemini-3.8-flash")
+                    else "gemini-flash-lite-latest"
+                )
+                logger.warning(
+                    "Gemini model '%s' failed (%s); retrying with fallback model '%s'",
+                    self.model_name,
+                    err_str[:120],
+                    fallback_model,
+                )
+                return client.models.generate_content(
+                    model=fallback_model,
+                    contents=contents,
+                    config=config,
+                )
+            raise
+
+    def _map_error(self, e: Exception) -> Exception:
+        if isinstance(e, (LLMResponseMalformedError, LLMQuotaExceededError, LLMTimeoutError, LLMConfigurationError)):
+            return e
+        if isinstance(e, (httpx.TimeoutException, TimeoutError)):
+            logger.warning("Gemini API call timed out: %s", e)
+            return LLMTimeoutError(f"Gemini API request timed out after {self.timeout}s")
+
+        error_str = str(e)
+        logger.error("Gemini API error encountered: %s", error_str)
+
+        if "401" in error_str or "403" in error_str or "API_KEY_INVALID" in error_str or "PERMISSION_DENIED" in error_str:
+            return LLMConfigurationError("Gemini authentication failed: Invalid or unauthorized GEMINI_API_KEY.")
+
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "quota" in error_str.lower():
+            return LLMQuotaExceededError(f"Gemini quota exceeded: {error_str}")
+
+        return LLMAPIError(f"Gemini API error: {error_str}")
+
     def generate_text(
         self,
         prompt: str,
@@ -105,8 +165,8 @@ class GeminiGateway(LLMGateway):
                 system_instruction=system_instruction if system_instruction else None,
             )
 
-            response = client.models.generate_content(
-                model=self.model_name,
+            response = self._call_generate_content(
+                client=client,
                 contents=prompt,
                 config=config,
             )
@@ -116,21 +176,8 @@ class GeminiGateway(LLMGateway):
 
             return response.text.strip()
 
-        except LLMResponseMalformedError:
-            raise
-        except (httpx.TimeoutException, TimeoutError) as e:
-            logger.warning("Gemini API call timed out: %s", e)
-            raise LLMTimeoutError(f"Gemini API request timed out after {self.timeout}s") from e
         except Exception as e:
-            error_str = str(e)
-            logger.error("Gemini API error encountered: %s", error_str)
-
-            # Detect quota / rate-limiting errors
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "quota" in error_str.lower():
-                raise LLMQuotaExceededError(f"Gemini quota exceeded: {error_str}") from e
-
-            # Other SDK / API errors
-            raise LLMAPIError(f"Gemini API error: {error_str}") from e
+            raise self._map_error(e) from e
 
     def generate_json(
         self,
@@ -154,8 +201,8 @@ class GeminiGateway(LLMGateway):
 
             config = types.GenerateContentConfig(**config_kwargs)
 
-            response = client.models.generate_content(
-                model=self.model_name,
+            response = self._call_generate_content(
+                client=client,
                 contents=prompt,
                 config=config,
             )
@@ -165,19 +212,8 @@ class GeminiGateway(LLMGateway):
 
             return extract_json_from_text(response.text)
 
-        except (LLMResponseMalformedError, LLMQuotaExceededError, LLMTimeoutError):
-            raise
-        except (httpx.TimeoutException, TimeoutError) as e:
-            logger.warning("Gemini JSON API call timed out: %s", e)
-            raise LLMTimeoutError(f"Gemini API request timed out after {self.timeout}s") from e
         except Exception as e:
-            error_str = str(e)
-            logger.error("Gemini API error during JSON generation: %s", error_str)
-
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "quota" in error_str.lower():
-                raise LLMQuotaExceededError(f"Gemini quota exceeded: {error_str}") from e
-
-            raise LLMAPIError(f"Gemini API error: {error_str}") from e
+            raise self._map_error(e) from e
 
 
 # Alias for explicit naming

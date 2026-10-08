@@ -18,6 +18,9 @@ class EvidenceReference(BaseModel):
     url: Optional[str] = Field(None, description="Source URL if available")
     page: Optional[int] = Field(None, description="Page number if applicable")
     relevance: float = Field(0.0, ge=0.0, le=1.0, description="Relevance score (0.0 - 1.0)")
+    document_id: Optional[str] = Field(None, description="Document identifier")
+    document_name: Optional[str] = Field(None, description="Document name")
+    chunk_id: Optional[str] = Field(None, description="Chunk identifier")
 
     def to_citation(self) -> Any:
         from app.schemas.evidence import Citation
@@ -27,6 +30,8 @@ class EvidenceReference(BaseModel):
             evidence=self.text,
             page=self.page,
             relevance_score=self.relevance,
+            document_id=self.document_id,
+            chunk_id=self.chunk_id,
         )
 
 

@@ -13,6 +13,8 @@ class Citation(BaseModel):
         le=1.0,
         description="Relevance score of citation to the claim",
     )
+    document_id: Optional[str] = Field(None, description="Document identifier")
+    chunk_id: Optional[str] = Field(None, description="Chunk identifier")
 
 
 class EvidenceItem(BaseModel):
@@ -22,6 +24,9 @@ class EvidenceItem(BaseModel):
     url: Optional[str] = Field(None, description="Source URL")
     page: Optional[int] = Field(None, description="Page number")
     relevance_score: float = Field(0.0, ge=0.0, le=1.0, description="Relevance score")
+    document_id: Optional[str] = Field(None, description="Document identifier")
+    document_name: Optional[str] = Field(None, description="Document name")
+    chunk_id: Optional[str] = Field(None, description="Chunk identifier")
 
     def to_citation(self) -> Citation:
         return Citation(
@@ -30,6 +35,8 @@ class EvidenceItem(BaseModel):
             evidence=self.text,
             page=self.page,
             relevance_score=self.relevance_score,
+            document_id=self.document_id,
+            chunk_id=self.chunk_id,
         )
 
 
@@ -67,6 +74,8 @@ def convert_to_citations(raw_items: Any) -> List[Citation]:
                         evidence=text,
                         page=item.get("page"),
                         relevance_score=round(relevance, 4),
+                        document_id=item.get("document_id"),
+                        chunk_id=item.get("chunk_id"),
                     )
                 )
         except Exception:
