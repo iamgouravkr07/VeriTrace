@@ -6,7 +6,7 @@ import type {
 } from '../types';
 
 const API_BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) ||
+  ((import.meta as any)?.env?.VITE_API_URL as string | undefined) ||
   'http://localhost:8000';
 
 /**
@@ -151,12 +151,14 @@ export interface VerificationResult {
   data: VerificationResponse;
   isLiveBackend: boolean;
   notice?: string;
+  error?: string;
 }
 
 /**
  * Main verification request handler.
  * Always attempts real backend API first when available.
- * If backend is offline or endpoint not yet deployed, falls back to isolated demo presets.
+ * If backend is offline or endpoint not yet deployed, falls back to isolated demo presets
+ * ONLY if the user explicitly selected a preset.
  */
 export async function verifyText(
   request?: VerificationRequest,
@@ -164,7 +166,7 @@ export async function verifyText(
 ): Promise<VerificationResult> {
   const queryText = request?.query?.trim() || '';
 
-  // 1. Attempt live backend call if request is provided
+  // 1. Attempt live backend call if query is provided
   if (queryText) {
     try {
       const controller = new AbortController();
@@ -179,7 +181,7 @@ export async function verifyText(
        *   question
        *   answer
        *
-       * Therefore explicitly map the frontend fields to the backend contract.
+       * Explicitly map the frontend fields to the backend contract.
        */
       let res = await fetch(`${API_BASE_URL}/api/v1/verify`, {
         method: 'POST',
@@ -263,47 +265,47 @@ export async function verifyText(
       }
     } catch {
       // Backend unreachable or request failed;
-      // proceed to isolated demo fallback.
+      // proceed to offline fallback.
     }
   }
 
-  // 2. Isolated Demo Fallback (clearly labeled)
-  await new Promise((res) => setTimeout(res, 500));
+  // 2. Offline Fallback Handling
+  await new Promise((res) => setTimeout(res, 200));
 
-  let selectedPreset = DEMO_PRESETS.australia;
-
+  // Demo presets may ONLY be used when the user explicitly selected a valid preset
   if (presetKey && DEMO_PRESETS[presetKey]) {
-    selectedPreset = DEMO_PRESETS[presetKey];
-  } else if (
-    queryText.toLowerCase().includes('apollo') ||
-    queryText.toLowerCase().includes('moon')
-  ) {
-    selectedPreset = DEMO_PRESETS.apollo;
-  } else if (
-    queryText.toLowerCase().includes('webb') ||
-    queryText.toLowerCase().includes('jwst')
-  ) {
-    selectedPreset = DEMO_PRESETS.jwst;
+    const preset = DEMO_PRESETS[presetKey];
+    return {
+      data: {
+        ...preset,
+        query: request?.query || preset.query,
+        llmAnswer: request?.llmAnswer || preset.llmAnswer,
+        model: request?.model || preset.model || 'gpt-4o',
+      },
+      isLiveBackend: false,
+      notice: `Offline demo mode active: using ${presetKey} preset (/api/v1/verify backend endpoint not reachable).`,
+    };
   }
 
-  // If user entered a custom query that couldn't reach backend,
-  // return the selected preset with user's query.
-  const responseData: VerificationResponse = {
-    ...(queryText
-      ? {
-          ...selectedPreset,
-          query: queryText,
-        }
-      : selectedPreset),
-
+  // For custom user-entered question/answer when the backend is unavailable:
+  // - NEVER silently substitute DEMO_PRESETS.australia or any unrelated preset.
+  // - Preserve BOTH request.query and request.llmAnswer.
+  // - Do NOT fabricate claims, evidence, confidence, citations, or verification results.
+  // - Return a clear error and notice indicating that live verification backend is unavailable.
+  const fallbackData: VerificationResponse = {
+    query: request?.query || '',
+    llmAnswer: request?.llmAnswer || '',
+    hallucinationRisk: 0,
+    claims: [],
+    latencySeconds: 0,
     model: request?.model || 'gpt-4o',
   };
 
   return {
-    data: responseData,
+    data: fallbackData,
     isLiveBackend: false,
-    notice:
-      'Offline demo mode active: /api/v1/verify backend endpoint not reachable.',
+    notice: 'Live verification backend is unavailable. Offline demo mode cannot verify custom assertions without backend connectivity.',
+    error: 'Live verification backend is unavailable. Offline verification is only available for pre-configured demo presets.',
   };
 }
 

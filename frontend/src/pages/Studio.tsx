@@ -44,7 +44,9 @@ export const Studio = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [nliThreshold, setNliThreshold] = useState<number>(75);
   const [topK, setTopK] = useState<number>(3);
-  const [selectedPresetKey, setSelectedPresetKey] = useState<string>(initialPresetKey || 'australia');
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string>(
+    initialPresetKey !== undefined ? initialPresetKey : initialQuery ? '' : 'australia'
+  );
 
   const [loading, setLoading] = useState(false);
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>(1);
@@ -88,6 +90,8 @@ export const Studio = ({
     if (target) {
       setQuery(target.query);
       setLlmAnswer(target.answer);
+      setResult(null);
+      setError(null);
     }
   };
 
@@ -107,29 +111,58 @@ export const Studio = ({
     const t5 = setTimeout(() => setPipelineStage(5), 950);
     stageTimerRef.current = [t2, t3, t4, t5];
 
+    const currentQuery = query.trim();
+    const currentAnswer = llmAnswer.trim();
+
     try {
       const response = await verifyText(
         {
-          query: query.trim(),
-          llmAnswer: llmAnswer.trim() || undefined,
+          query: currentQuery,
+          llmAnswer: currentAnswer || undefined,
           contextDocument: contextDoc.trim() || undefined,
           model: selectedModel,
         },
-        selectedPresetKey
+        selectedPresetKey || undefined
       );
 
       setPipelineStage(5);
       await new Promise((res) => setTimeout(res, 250));
 
+      // Make sure the result corresponds to the current query and answer (Requirement 10)
+      if (response.data.query.trim() !== currentQuery) {
+        setResult(null);
+        setError('Verification result does not match the current query.');
+        return;
+      }
+
+      if (currentAnswer && response.data.llmAnswer.trim() !== currentAnswer) {
+        setResult(null);
+        setError('Verification result does not match the current answer.');
+        return;
+      }
+
+      // For custom user input when backend fails (Requirement 6)
+      if (!response.isLiveBackend && !selectedPresetKey) {
+        setError(
+          response.error ||
+            response.notice ||
+            'Live verification backend is unavailable. Offline demo mode cannot verify custom assertions.'
+        );
+        setResult(null);
+        return;
+      }
+
       setResult(response.data);
       setIsLiveBackend(response.isLiveBackend);
       setNotice(response.notice);
+      setError(null);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : 'Verification pipeline failed to return response.'
       );
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -265,6 +298,8 @@ export const Studio = ({
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setSelectedPresetKey('');
+                  setResult(null);
+                  setError(null);
                 }}
                 placeholder="Enter prompt or query..."
                 className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -286,6 +321,8 @@ export const Studio = ({
                 onChange={(e) => {
                   setLlmAnswer(e.target.value);
                   setSelectedPresetKey('');
+                  setResult(null);
+                  setError(null);
                 }}
                 placeholder="Paste LLM-generated output to inspect for hallucinations..."
                 className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors leading-relaxed"
