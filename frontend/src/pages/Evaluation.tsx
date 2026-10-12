@@ -1,403 +1,49 @@
 import { useEffect, useState } from 'react';
-import {
-  BarChart3,
-  Cpu,
-  Layers,
-  Sparkles,
-  RefreshCw,
-  Zap,
-  ShieldCheck,
-  TrendingUp,
-} from 'lucide-react';
+import { BarChart3, CheckCircle2, Database, Info, RefreshCw, ShieldCheck, Timer } from 'lucide-react';
 import { fetchEvaluationMetrics } from '../services/api';
 import type { BenchmarkMetrics } from '../types';
 
-interface ModelBenchmark {
-  model: string;
-  provider: string;
-  catchRate: number; // Hallucination catch rate %
-  precision: number;
-  f1Score: number;
-  latencySeconds: number;
-  tier: 'High Accuracy' | 'Balanced' | 'Fast';
-}
-
-const MODEL_BENCHMARK_DATA: ModelBenchmark[] = [
-  {
-    model: 'GPT-4o',
-    provider: 'OpenAI',
-    catchRate: 93.4,
-    precision: 91.8,
-    f1Score: 92.6,
-    latencySeconds: 1.8,
-    tier: 'High Accuracy',
-  },
-  {
-    model: 'Claude 3.5 Sonnet',
-    provider: 'Anthropic',
-    catchRate: 92.1,
-    precision: 90.5,
-    f1Score: 91.3,
-    latencySeconds: 1.9,
-    tier: 'High Accuracy',
-  },
-  {
-    model: 'Llama-3-70B',
-    provider: 'Meta',
-    catchRate: 88.6,
-    precision: 89.2,
-    f1Score: 88.9,
-    latencySeconds: 2.2,
-    tier: 'Balanced',
-  },
-  {
-    model: 'Mistral Large',
-    provider: 'Mistral AI',
-    catchRate: 86.4,
-    precision: 87.1,
-    f1Score: 86.7,
-    latencySeconds: 2.0,
-    tier: 'Fast',
-  },
-];
-
-// Reusable SVG Mini Sparkline Component
-const Sparkline = ({
-  points,
-  color = '#3b82f6',
-  width = 110,
-  height = 30,
-}: {
-  points: number[];
-  color?: string;
-  width?: number;
-  height?: number;
-}) => {
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-  const pathD = points
-    .map((p, idx) => {
-      const x = (idx / (points.length - 1)) * width;
-      const y = height - ((p - min) / range) * (height - 8) - 4;
-      return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
-
-  return (
-    <svg width={width} height={height} className="overflow-visible inline-block">
-      <path
-        d={pathD}
-        fill="none"
-        stroke={color}
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Mini end-point pulsing dot */}
-      <circle
-        cx={width}
-        cy={height - ((points[points.length - 1] - min) / range) * (height - 8) - 4}
-        r="2.5"
-        fill={color}
-      />
-    </svg>
-  );
-};
+const MetricBar = ({ label, value, description, color }: { label: string; value: number; description: string; color: string }) => <div className="space-y-2"><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</span><span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">{value}%</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div><p className="text-xs text-slate-500 dark:text-slate-400">{description}</p></div>;
 
 export const Evaluation = () => {
   const [metrics, setMetrics] = useState<BenchmarkMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const loadMetrics = async () => {
+    setError(false);
+    try { setMetrics(await fetchEvaluationMetrics()); } catch { setError(true); } finally { setLoading(false); setIsRefreshing(false); }
+  };
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     fetchEvaluationMetrics().then((data) => {
-      if (isMounted) {
+      if (mounted) {
         setMetrics(data);
         setLoading(false);
       }
+    }).catch(() => {
+      if (mounted) {
+        setError(true);
+        setLoading(false);
+      }
     });
-    return () => {
-      isMounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchEvaluationMetrics().then((data) => {
-      setMetrics(data);
-      setIsRefreshing(false);
-    });
-  };
+  if (loading) return <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6"><div className="h-8 w-72 animate-pulse rounded bg-slate-200 dark:bg-slate-800" /><div className="grid gap-4 lg:grid-cols-3"><div className="h-56 animate-pulse rounded-2xl bg-white dark:bg-slate-900" /><div className="h-56 animate-pulse rounded-2xl bg-white dark:bg-slate-900" /><div className="h-56 animate-pulse rounded-2xl bg-white dark:bg-slate-900" /></div></div>;
 
-  if (loading || !metrics) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-7 h-64 bg-white/80 dark:bg-[#0c0e14]/90 border border-slate-200 dark:border-slate-800 rounded-2xl animate-pulse" />
-          <div className="lg:col-span-5 h-64 bg-white/80 dark:bg-[#0c0e14]/90 border border-slate-200 dark:border-slate-800 rounded-2xl animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  if (error || !metrics) return <div className="mx-auto max-w-2xl px-4 py-16 text-center"><Info className="mx-auto h-8 w-8 text-rose-500" /><h1 className="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">Evaluation metrics unavailable</h1><p className="mt-2 text-sm text-slate-500 dark:text-slate-400">The evaluation endpoint did not return usable metrics. No benchmark result has been inferred.</p><button type="button" onClick={() => { setIsRefreshing(true); void loadMetrics(); }} className="mt-5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Retry</button></div>;
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-slate-850">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
-            <h1 className="text-xl font-sans font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-              Guardrail Benchmark &amp; Telemetry
-            </h1>
-          </div>
-          <p className="text-xs font-sans font-normal text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-            Empirical evaluation across FaithEval &amp; HaluEval suites &bull; Real-time NLI accuracy &amp; latency profiling.
-          </p>
-        </div>
+  return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+    <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-blue-600 dark:text-cyan-400" /><p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 dark:text-cyan-300">Evaluation workspace</p></div><h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-slate-100">Benchmark results</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">A readable view of the metrics returned by the evaluation service. Values below are not a newly-run benchmark from this page.</p></div><button type="button" disabled={isRefreshing} onClick={() => { setIsRefreshing(true); void loadMetrics(); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"><RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />Refresh metrics</button></header>
 
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans font-semibold bg-white/90 dark:bg-[#0c0e14]/90 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 shadow-2xs transition-all cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>Refresh Telemetry Run</span>
-        </button>
-      </div>
+    <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300"><ShieldCheck className="h-4 w-4" />F1 score</div><p className="mt-2 text-3xl font-extrabold text-emerald-800 dark:text-emerald-200">{metrics.f1Score}%</p><p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">Harmonic mean of precision and recall</p></div><div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/30"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300"><CheckCircle2 className="h-4 w-4" />Assertions evaluated</div><p className="mt-2 text-3xl font-extrabold text-blue-800 dark:text-blue-200">{metrics.datasetSize}</p><p className="mt-1 text-xs text-blue-700/80 dark:text-blue-300/80">Dataset size returned by the service</p></div><div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 dark:border-cyan-900 dark:bg-cyan-950/30"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-300"><Timer className="h-4 w-4" />Average latency</div><p className="mt-2 text-3xl font-extrabold text-cyan-800 dark:text-cyan-200">{metrics.averageLatency}s</p><p className="mt-1 text-xs text-cyan-700/80 dark:text-cyan-300/80">Reported by the evaluation service</p></div></div>
 
-      {/* ASYMMETRIC BENTO BOX GRID: Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Bento Hero Card: F1 Harmonic Accuracy + Sparkline (7 cols) */}
-        <div className="lg:col-span-7 bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-850">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span className="font-sans text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Truth Guardrail Efficacy Index
-                </span>
-              </div>
-              <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-                ✓ SOTA Harmonic Mean
-              </span>
-            </div>
+    <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800"><div><h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Detection quality</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Higher values indicate stronger evaluation performance.</p></div><span className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:text-slate-400">Live response</span></div><div className="mt-5 space-y-6"><MetricBar label="Precision" value={metrics.precision} description="How often flagged assertions were actually incorrect." color="bg-blue-500" /><MetricBar label="Recall" value={metrics.recall} description="How many incorrect assertions were successfully intercepted." color="bg-emerald-500" /><MetricBar label="F1 score" value={metrics.f1Score} description="A balanced summary of precision and recall." color="bg-violet-500" /></div></section><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"><Database className="h-4 w-4 text-blue-600 dark:text-cyan-400" /><div><h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Evaluation scope</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">What the current response tells us</p></div></div><dl className="mt-5 space-y-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500 dark:text-slate-400">Assertions</dt><dd className="font-semibold text-slate-900 dark:text-slate-100">{metrics.datasetSize}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500 dark:text-slate-400">Models reported</dt><dd className="text-right font-semibold text-slate-900 dark:text-slate-100">{metrics.testedModels.length ? metrics.testedModels.join(', ') : 'Not reported'}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500 dark:text-slate-400">Per-model comparison</dt><dd className="font-semibold text-slate-500 dark:text-slate-400">Unavailable</dd></div></dl><div className="mt-6 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-950 dark:text-slate-400">The interface intentionally avoids inventing datasets, historical trends, model scores, or performance improvements that are not included in the service response.</div></section></div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mt-4">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-sans font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-                    {metrics.f1Score}%
-                  </span>
-                  <span className="font-sans text-xs text-slate-400 font-semibold uppercase">F1 Accuracy</span>
-                </div>
-                <p className="text-xs font-sans font-normal text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed">
-                  Evaluated on {metrics.datasetSize} assertions. High harmonic precision ensures minimal false alarms on grounded assertions.
-                </p>
-              </div>
-
-              {/* Sparkline Visual */}
-              <div className="p-3 bg-slate-50/70 dark:bg-[#08090c]/70 border border-slate-200/60 dark:border-slate-800 rounded-xl">
-                <div className="flex items-center justify-between gap-4 text-[10px] font-mono text-slate-400 mb-1">
-                  <span>HISTORICAL TREND</span>
-                  <span className="text-emerald-500 font-bold flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3" /> +5.3%
-                  </span>
-                </div>
-                <Sparkline points={[86.5, 88.3, 89.9, 91.1, metrics.f1Score]} color="#10b981" width={130} height={36} />
-              </div>
-            </div>
-          </div>
-
-          {/* Sub Metrics: Precision & Recall Progress Sliders */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-850">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 dark:text-slate-400 font-sans font-medium">Precision (True Positive)</span>
-                <span className="font-sans font-bold text-blue-600 dark:text-blue-400">{metrics.precision}%</span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-blue-500 transition-all duration-700"
-                  style={{ width: `${metrics.precision}%` }}
-                />
-              </div>
-              <span className="text-[10px] font-sans font-normal text-slate-400">Target ≥ 90% &bull; Low false accusation rate</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 dark:text-slate-400 font-sans font-medium">Recall (Coverage)</span>
-                <span className="font-sans font-bold text-emerald-600 dark:text-emerald-400">{metrics.recall}%</span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-700"
-                  style={{ width: `${metrics.recall}%` }}
-                />
-              </div>
-              <span className="text-[10px] font-sans font-normal text-slate-400">Target ≥ 90% &bull; Intercepted confabulations</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bento Card: Middleware SLA & Turnaround (5 cols) */}
-        <div className="lg:col-span-5 bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-850">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-cyan-500" />
-                <span className="font-sans text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Turnaround SLA
-                </span>
-              </div>
-              <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-semibold">
-                SLA &lt; 2.0s
-              </span>
-            </div>
-
-            <div className="mt-4 flex items-end justify-between">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-sans font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                    {metrics.averageLatency}s
-                  </span>
-                  <span className="font-sans text-xs text-slate-400 font-semibold uppercase">Avg Latency</span>
-                </div>
-                <p className="text-xs font-sans font-normal text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  Synchronous middleware turnaround across extraction, vector retrieval, and NLI cross-checks.
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50/70 dark:bg-[#08090c]/70 border border-slate-200/60 dark:border-slate-800 rounded-xl">
-                <Sparkline points={[2.4, 2.1, 1.95, 1.88, metrics.averageLatency]} color="#06b6d4" width={90} height={32} />
-              </div>
-            </div>
-          </div>
-
-          {/* Sub Breakdown Telemetry */}
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-850 space-y-2">
-            <span className="text-[10px] font-mono uppercase text-slate-400 block font-semibold">
-              Latency Profiling Breakdown:
-            </span>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                <span className="text-[10px] text-slate-400 font-mono block">Extract</span>
-                <span className="font-sans text-xs font-bold text-slate-800 dark:text-slate-200">~0.3s</span>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                <span className="text-[10px] text-slate-400 font-mono block">Retrieve</span>
-                <span className="font-sans text-xs font-bold text-slate-800 dark:text-slate-200">~0.8s</span>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                <span className="text-[10px] text-slate-400 font-mono block">NLI Cross</span>
-                <span className="font-sans text-xs font-bold text-slate-800 dark:text-slate-200">~0.7s</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Model Generalization Benchmark Table */}
-      <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4 transition-colors">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-850">
-          <div>
-            <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-              <h2 className="text-xs font-sans font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Model Cross-Evaluation Benchmark
-              </h2>
-            </div>
-            <p className="text-[11px] font-sans font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-              Comparative hallucination interception rates across frontier LLMs on identical test sets
-            </p>
-          </div>
-
-          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1">
-            n = {metrics.datasetSize} assertions verified
-          </span>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider font-mono">
-                <th className="py-2.5 px-3">Model Architecture</th>
-                <th className="py-2.5 px-3">Provider</th>
-                <th className="py-2.5 px-3 text-right">Hallucination Catch Rate</th>
-                <th className="py-2.5 px-3 text-right">Precision</th>
-                <th className="py-2.5 px-3 text-right">F1 Score</th>
-                <th className="py-2.5 px-3 text-right">Avg Latency</th>
-                <th className="py-2.5 px-3 text-center">Benchmark Tier</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-              {MODEL_BENCHMARK_DATA.map((row) => (
-                <tr key={row.model} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 px-3 font-sans font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-cyan-400" />
-                    <span>{row.model}</span>
-                  </td>
-                  <td className="py-3 px-3 font-sans font-normal text-slate-500 dark:text-slate-400">{row.provider}</td>
-                  <td className="py-3 px-3 text-right font-sans font-bold text-emerald-600 dark:text-emerald-400">
-                    {row.catchRate}%
-                  </td>
-                  <td className="py-3 px-3 text-right font-sans font-medium">{row.precision}%</td>
-                  <td className="py-3 px-3 text-right font-sans font-bold">{row.f1Score}%</td>
-                  <td className="py-3 px-3 text-right font-sans font-medium text-slate-600 dark:text-slate-400">
-                    {row.latencySeconds}s
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${
-                        row.tier === 'High Accuracy'
-                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-cyan-300 border-blue-200 dark:border-blue-800'
-                          : row.tier === 'Balanced'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      {row.tier}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Dataset & Methodology Notes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs space-y-2">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100 font-bold font-mono">
-            <Layers className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-            <span>Dataset Distribution &amp; Synthetic Perturbations</span>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[11px]">
-            The benchmark dataset comprises {metrics.datasetSize} assertion pairs. 50% consist of
-            factually grounded statements from Wikipedia, scientific papers, and governmental records;
-            50% represent synthetic entity swaps, hallucinated dates, and fabricated causal claims.
-          </p>
-        </div>
-
-        <div className="bg-white/80 dark:bg-[#0c0e14]/90 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs space-y-2">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100 font-bold font-mono">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Production SLA &amp; Real-time Verification Targets</span>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[11px]">
-            VeriTrace is optimized to run as synchronous middleware for conversational and RAG
-            pipelines. With atomic proposition caching and vector similarity thresholds, inference
-            turnaround remains under 2.0s even with multiple cross-checking references.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">How to read these metrics</h2><div className="mt-4 grid gap-4 text-sm text-slate-600 dark:text-slate-400 md:grid-cols-3"><p><strong className="text-slate-900 dark:text-slate-100">Precision</strong> limits false accusations by measuring the correctness of flagged results.</p><p><strong className="text-slate-900 dark:text-slate-100">Recall</strong> measures coverage: the share of incorrect assertions the guardrail catches.</p><p><strong className="text-slate-900 dark:text-slate-100">Latency</strong> is the service-reported average and may vary by backend availability and workload.</p></div></section>
+  </div>;
 };
+
+export default Evaluation;

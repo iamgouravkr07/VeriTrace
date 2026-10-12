@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { verifyText, DEMO_PRESETS } from '../src/services/api.ts';
+import { verifyText, DEMO_PRESETS, fetchEvaluationMetrics } from '../src/services/api.ts';
 
 // Simulate offline backend for offline demo testing
 const originalFetch = globalThis.fetch;
@@ -135,6 +135,72 @@ test('Criterion E: explicit Apollo preset still works in offline demo mode', asy
       'The Apollo 11 Lunar Module landed on the Moon on July 20, 1969.'
     );
     assert.ok(result.notice && result.notice.includes('apollo'));
+  } finally {
+    restoreFetch();
+  }
+});
+
+test('Criterion F: live response preserves multiple claims and optional evidence metadata', async () => {
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.endsWith('/api/v1/verify')) {
+      return new Response(JSON.stringify({
+        execution_time_ms: 2450,
+        overall_risk: 42,
+        claims: [
+          { id: 'supported-1', text: 'A supported claim.', verdict: 'SUPPORTED', confidence: 0.91, citations: [{ source: 'Trusted source', url: 'https://example.com/source', text: 'A long enough source excerpt.' }] },
+          { id: 'unknown-1', text: 'An unverified claim.', status: 'UNVERIFIED' },
+          { id: 'contradicted-1', text: 'A contradicted claim.', status: 'CONTRADICTED', confidence: 87, evidence: [] },
+        ],
+      }));
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const result = await verifyText({ query: 'Test question', llmAnswer: 'Test answer' });
+    assert.strictEqual(result.isLiveBackend, true);
+    assert.deepStrictEqual(result.data.claims.map((claim) => claim.status), ['SUPPORTED', 'UNVERIFIED', 'CONTRADICTED']);
+    assert.strictEqual(result.data.claims[0].confidence, 91);
+    assert.deepStrictEqual(result.data.claims[0].evidence, [{
+      id: 'ev-supported-1-1',
+      sourceTitle: 'Trusted source',
+      sourceUrl: 'https://example.com/source',
+      snippet: 'A long enough source excerpt.',
+    }]);
+    assert.deepStrictEqual(result.data.claims[1].evidence, []);
+    assert.deepStrictEqual(result.data.claims[2].evidence, []);
+  } finally {
+    restoreFetch();
+  }
+});
+
+test('Criterion H: unavailable evaluation metrics do not fall back to fabricated baseline data', async () => {
+  mockOfflineBackend();
+  try {
+    await assert.rejects(
+      () => fetchEvaluationMetrics(),
+      /Evaluation metrics are unavailable from the backend/
+    );
+  } finally {
+    restoreFetch();
+  }
+});
+
+test('Criterion G: absent evidence metadata does not create fabricated source details', async () => {
+  globalThis.fetch = async (input) => {
+    if (String(input).endsWith('/api/v1/verify')) {
+      return new Response(JSON.stringify({ claims: [{ text: 'Claim without citations', status: 'SUPPORTED' }] }));
+    }
+    throw new Error('Unexpected request');
+  };
+
+  try {
+    const result = await verifyText({ query: 'Question', llmAnswer: 'Answer' });
+    const claim = result.data.claims[0];
+    assert.strictEqual(claim.evidence?.length, 0);
+    assert.strictEqual('confidence' in claim, false);
+    assert.strictEqual('sourceTitle' in (claim.evidence?.[0] || {}), false);
   } finally {
     restoreFetch();
   }

@@ -92,11 +92,20 @@ export const Studio = ({
       setLlmAnswer(target.answer);
       setResult(null);
       setError(null);
+      setNotice(undefined);
+      setIsLiveBackend(false);
     }
   };
 
   const handleVerify = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setResult(null);
+      setError('Add a question or claim before starting verification.');
+      return;
+    }
+
+    setNotice(undefined);
+    setIsLiveBackend(false);
 
     stageTimerRef.current.forEach(clearTimeout);
     stageTimerRef.current = [];
@@ -198,7 +207,20 @@ export const Studio = ({
   const approxTokens = Math.round(charCount / 4);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600 dark:text-blue-400">Verification workspace</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Verify an AI claim before you trust it.</h1>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">Paste the question and generated answer. VeriTrace checks the answer&apos;s claims against evidence and makes uncertainty visible.</p>
+        </div>
+        {result && !loading && (
+          <button type="button" onClick={handleReset} className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-400 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-300">
+            Start a new verification
+          </button>
+        )}
+      </header>
+
       {/* Top Workflow Stepper Banner */}
       <WorkflowStepper
         currentStage={pipelineStage}
@@ -218,9 +240,9 @@ export const Studio = ({
                 </h2>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 font-mono font-medium">
-                <span>~{approxTokens} tokens</span>
+                <span>{charCount.toLocaleString()} chars</span>
                 <span>&bull;</span>
-                <span>Stage 1</span>
+                <span>~{approxTokens} tokens</span>
               </div>
             </div>
 
@@ -293,7 +315,7 @@ export const Studio = ({
               </label>
               <textarea
                 id="eval-query"
-                rows={2}
+                rows={4}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -301,9 +323,14 @@ export const Studio = ({
                   setResult(null);
                   setError(null);
                 }}
-                placeholder="Enter prompt or query..."
-                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Example: When did Apollo 11 land on the Moon?"
+                aria-describedby="query-help query-count"
+                className="w-full min-h-28 resize-y border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-3 text-sm leading-6 text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
+              <div className="flex items-center justify-between gap-3 text-[11px] text-slate-400 dark:text-slate-500">
+                <span id="query-help">Use a focused question for the clearest claim checks.</span>
+                <span id="query-count" className="shrink-0 font-mono">{query.length.toLocaleString()} chars</span>
+              </div>
             </div>
 
             {/* Target LLM Output Textarea */}
@@ -316,7 +343,7 @@ export const Studio = ({
               </div>
               <textarea
                 id="eval-answer"
-                rows={3}
+                rows={6}
                 value={llmAnswer}
                 onChange={(e) => {
                   setLlmAnswer(e.target.value);
@@ -324,8 +351,8 @@ export const Studio = ({
                   setResult(null);
                   setError(null);
                 }}
-                placeholder="Paste LLM-generated output to inspect for hallucinations..."
-                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors leading-relaxed"
+                placeholder="Paste the generated answer you want VeriTrace to inspect..."
+                className="w-full min-h-36 resize-y border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg p-3 text-sm leading-6 text-slate-900 dark:text-slate-100 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
@@ -415,18 +442,14 @@ export const Studio = ({
               <button
                 type="button"
                 onClick={handleVerify}
-                disabled={loading || !query.trim()}
-                className={`w-full relative group rounded-xl p-[1.5px] transition-all duration-300 cursor-pointer overflow-hidden ${
-                  loading || !query.trim()
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-blue-500/20'
+                disabled={loading}
+                className={`w-full rounded-lg transition-colors cursor-pointer ${
+                  loading
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                    : 'bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:bg-blue-800'
                 }`}
               >
-                {/* Animated gradient border */}
-                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 group-hover:from-blue-500 group-hover:via-purple-500 group-hover:to-pink-500 transition-all duration-500" />
-
-                {/* Inner button container */}
-                <span className="relative flex items-center justify-center gap-2 py-3 px-4 rounded-[10.5px] bg-slate-900 dark:bg-[#08090c] text-white font-sans font-semibold text-xs uppercase tracking-wider transition-all duration-200 group-hover:bg-opacity-90">
+                <span className="flex items-center justify-center gap-2 py-3 px-4 font-sans font-semibold text-sm tracking-wide">
                   {loading ? (
                     <>
                       <span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
@@ -434,9 +457,9 @@ export const Studio = ({
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 fill-cyan-400 text-cyan-400 group-hover:scale-110 transition-transform" />
-                      <span className="tracking-widest">Execute Truth Verification</span>
-                      <span className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded shadow-xs">
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Verify claims</span>
+                      <span className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 text-[10px] font-mono font-medium text-blue-100 bg-blue-700 border border-blue-500 rounded">
                         Ctrl+↵
                       </span>
                     </>
@@ -568,6 +591,6 @@ export const Studio = ({
           )}
         </section>
       </div>
-    </div>
+    </main>
   );
 };

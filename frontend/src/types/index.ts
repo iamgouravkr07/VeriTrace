@@ -2,16 +2,18 @@ export type VerificationStatus = 'SUPPORTED' | 'CONTRADICTED' | 'UNVERIFIED';
 
 export interface EvidenceItem {
   id: string;
-  sourceTitle: string;
-  snippet: string;
+  sourceTitle?: string;
+  sourceUrl?: string;
+  snippet?: string;
 }
 
 export interface Claim {
   id: string;
   text: string;
   status: VerificationStatus;
-  confidence: number;
-  evidence: EvidenceItem[];
+  confidence?: number;
+  evidence?: EvidenceItem[];
+  risk?: number;
 }
 
 export interface VerificationResponse {
@@ -57,4 +59,4 @@ export interface VerificationHistoryItem {
   claimsCount: number;
   presetKey?: string;
 }
-
+

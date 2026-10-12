@@ -6,7 +6,6 @@ import { Evaluation } from './pages/Evaluation';
 import { History } from './pages/History';
 import type { VerificationHistoryItem } from './types';
 
-
 export default function App() {
   const [tab, setTab] = useState<NavTab>('demo');
   const [activeStudioConfig, setActiveStudioConfig] = useState<{
@@ -28,9 +27,8 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-[#08090C] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 tech-grid-canvas">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
         <Navbar activeTab={tab} onSelectTab={setTab} />
-
         <main className="flex-1">
           {tab === 'demo' && (
             <Chat
@@ -44,10 +42,9 @@ export default function App() {
           {tab === 'eval' && <Evaluation />}
           {tab === 'history' && <History onLoadRun={handleInspectHistoryItem} />}
         </main>
-
-        <footer className="border-t border-slate-200/80 dark:border-slate-800/80 bg-white/75 dark:bg-[#08090C]/80 backdrop-blur-md py-4 mt-auto transition-colors duration-200">
-          <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 dark:text-slate-500 font-mono">
-            VeriTrace &bull; Hallucination Detection &amp; Verification Middleware &bull; Member 2 Frontend
+        <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 py-4 mt-auto transition-colors duration-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500 dark:text-slate-400">
+            VeriTrace <span aria-hidden="true">&bull;</span> AI observability and verification middleware <span aria-hidden="true">&bull;</span> Member 2 Frontend
           </div>
         </footer>
       </div>

@@ -1,13 +1,17 @@
 import type {
   VerificationResponse,
+  Claim,
   BenchmarkMetrics,
   VerificationRequest,
   BackendHealth,
 } from '../types';
 
 const API_BASE_URL =
-  ((import.meta as any)?.env?.VITE_API_URL as string | undefined) ||
+  (import.meta.env?.VITE_API_URL as string | undefined) ||
   'http://localhost:8000';
+
+type RawRecord = Record<string, unknown>;
+const asRecord = (value: unknown): RawRecord => (value && typeof value === 'object' ? value as RawRecord : {});
 
 /**
  * Isolated Demo Presets for Hackathon Evaluation & Offline Testing.
@@ -211,8 +215,9 @@ export async function verifyText(
       clearTimeout(timeoutId);
 
       if (res && res.ok) {
-        const raw = await res.json();
-        const transformedClaims: any[] = (raw.claims || []).map((c: any) => {
+        const raw = asRecord(await res.json());
+        const transformedClaims = (Array.isArray(raw.claims) ? raw.claims : []).map((value: unknown) => {
+          const c = asRecord(value);
           let status = 'UNVERIFIED';
           if (c.status === 'SUPPORTED' || c.verdict === 'SUPPORTED') {
             status = 'SUPPORTED';
@@ -220,21 +225,34 @@ export async function verifyText(
             status = 'CONTRADICTED';
           }
 
-          const rawCitations = c.citations || c.evidence || c.supporting_evidence || [];
-          const evidenceItems = rawCitations.map((item: any, idx: number) => ({
-            id: `ev-${c.id}-${idx + 1}`,
-            sourceTitle: item.source || item.sourceTitle || 'Verified Document',
-            snippet: item.evidence || item.text || item.snippet || '',
-          }));
+          const rawCitations = [c.citations, c.evidence, c.supporting_evidence].find(Array.isArray) || [];
+          const claimId = typeof c.id === 'string' ? c.id : `claim-${Math.random().toString(36).slice(2)}`;
+          const evidenceItems = rawCitations.map((value, idx) => {
+            const item = asRecord(value);
+            return {
+              id: `ev-${claimId}-${idx + 1}`,
+            ...(typeof item.source === 'string' || typeof item.sourceTitle === 'string'
+              ? { sourceTitle: typeof item.source === 'string' ? item.source : item.sourceTitle as string }
+              : {}),
+            ...(typeof item.url === 'string' || typeof item.sourceUrl === 'string'
+              ? { sourceUrl: typeof item.url === 'string' ? item.url : item.sourceUrl as string }
+              : {}),
+            ...(typeof item.evidence === 'string' || typeof item.text === 'string' || typeof item.snippet === 'string'
+              ? { snippet: typeof item.evidence === 'string' ? item.evidence : typeof item.text === 'string' ? item.text : item.snippet as string }
+              : {}),
+            };
+          });
 
-          const rawConf = typeof c.confidence === 'number' ? c.confidence : 0.5;
-          const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
+          const rawConf = typeof c.confidence === 'number' ? c.confidence : undefined;
+          const confidence = rawConf === undefined
+            ? undefined
+            : rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
 
           return {
-            id: c.id,
-            text: c.text,
-            status,
-            confidence,
+            id: claimId,
+            text: typeof c.text === 'string' ? c.text : '',
+            status: status as Claim['status'],
+            ...(confidence === undefined ? {} : { confidence }),
             evidence: evidenceItems,
           };
         });
@@ -242,12 +260,12 @@ export async function verifyText(
         const latencySeconds =
           typeof raw.execution_time_ms === 'number'
             ? Math.round((raw.execution_time_ms / 1000) * 10) / 10
-            : (raw.latencySeconds || 1.5);
+            : typeof raw.latencySeconds === 'number' ? raw.latencySeconds : 1.5;
 
         const hallucinationRisk =
           typeof raw.overall_risk === 'number'
             ? Math.round(raw.overall_risk)
-            : (raw.hallucinationRisk || 0);
+            : typeof raw.hallucinationRisk === 'number' ? raw.hallucinationRisk : 0;
 
         const liveData: VerificationResponse = {
           query: request?.query || '',
@@ -311,36 +329,41 @@ export async function verifyText(
 
 /**
  * Fetches evaluation benchmark metrics.
- * Attempts /api/v1/evaluation first,
- * falling back to /api/evaluation or baseline metrics.
+ * Attempts the current endpoint first, then the legacy endpoint.
+ * Metrics are never synthesized when the evaluation service is unavailable.
  */
 export async function fetchEvaluationMetrics(): Promise<BenchmarkMetrics> {
-  try {
+  const endpoints = [`${API_BASE_URL}/api/v1/evaluation`, `${API_BASE_URL}/api/evaluation`];
+
+  for (const endpoint of endpoints) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    let res = await fetch(`${API_BASE_URL}/api/v1/evaluation`, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    }).catch(() => null);
-
-    if (!res || !res.ok) {
-      res = await fetch(`${API_BASE_URL}/api/evaluation`, {
+    try {
+      const res = await fetch(endpoint, {
         headers: { Accept: 'application/json' },
         signal: controller.signal,
-      }).catch(() => null);
-    }
+      });
 
-    clearTimeout(timeoutId);
-
-    if (res && res.ok) {
-      return (await res.json()) as BenchmarkMetrics;
+      if (res.ok) {
+        const data = (await res.json()) as Partial<BenchmarkMetrics>;
+        if (
+          typeof data.precision === 'number' &&
+          typeof data.recall === 'number' &&
+          typeof data.f1Score === 'number' &&
+          typeof data.averageLatency === 'number' &&
+          typeof data.datasetSize === 'number' &&
+          Array.isArray(data.testedModels)
+        ) {
+          return data as BenchmarkMetrics;
+        }
+      }
+    } catch {
+      // Try the legacy endpoint before reporting the service as unavailable.
+    } finally {
+      clearTimeout(timeoutId);
     }
-  } catch {
-    // Backend offline; use baseline benchmark dataset.
   }
 
-  await new Promise((res) => setTimeout(res, 300));
-
-  return MOCK_BENCHMARK;
+  throw new Error('Evaluation metrics are unavailable from the backend.');
 }
