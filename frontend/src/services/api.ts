@@ -252,7 +252,7 @@ export async function verifyText(
             id: claimId,
             text: typeof c.text === 'string' ? c.text : '',
             status: status as Claim['status'],
-            confidence,
+            ...(confidence === undefined ? {} : { confidence }),
             evidence: evidenceItems,
           };
         });
