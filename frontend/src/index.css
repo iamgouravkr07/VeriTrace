@@ -9,37 +9,17 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-/* Explicit Global Typography Overrides */
-:root, html, body {
-  font-family: 'Inter', sans-serif !important;
-}
-
-code, pre, .font-mono {
-  font-family: 'JetBrains Mono', monospace !important;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: 'Inter', sans-serif !important;
-}
-
-button,
-input,
-optgroup,
-select,
-textarea {
-  font-family: inherit;
-}
-
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --sans: 'Inter', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', monospace;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-subtle: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #4f46e5;
+  --accent-strong: #4338ca;
   color-scheme: light;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -47,69 +27,44 @@ textarea {
 }
 
 .dark {
+  --surface: #0f172a;
+  --surface-muted: #111827;
+  --surface-subtle: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #818cf8;
+  --accent-strong: #a5b4fc;
   color-scheme: dark;
 }
+
+:root, html, body, button, input, optgroup, select, textarea {
+  font-family: var(--font-sans);
+}
+
+code, pre, .font-mono { font-family: var(--font-mono); }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background: var(--surface-muted);
+  color: var(--text);
 }
 
-.dark body {
-  background-color: #08090c;
-  color: #f1f5f9;
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+
+:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.45);
+  outline-offset: 2px;
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-/* Micro Technical Dot Matrix Canvas */
-.tech-grid-canvas {
-  background-image: radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.dark .tech-grid-canvas {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Subtle Glassmorphic Shimmer & Neon Glow Utilities */
-.neon-glow-emerald {
-  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.45));
-}
-
-.neon-glow-amber {
-  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.45));
-}
-
-.neon-glow-rose {
-  filter: drop-shadow(0 0 14px rgba(244, 63, 94, 0.55));
-}
-
-/* Sleek Cyber Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 9999px;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
