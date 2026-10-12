@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { verifyText, DEMO_PRESETS } from '../src/services/api.ts';
+import { verifyText, DEMO_PRESETS, fetchEvaluationMetrics } from '../src/services/api.ts';
 
 // Simulate offline backend for offline demo testing
 const originalFetch = globalThis.fetch;
@@ -170,6 +170,18 @@ test('Criterion F: live response preserves multiple claims and optional evidence
     }]);
     assert.deepStrictEqual(result.data.claims[1].evidence, []);
     assert.deepStrictEqual(result.data.claims[2].evidence, []);
+  } finally {
+    restoreFetch();
+  }
+});
+
+test('Criterion H: unavailable evaluation metrics do not fall back to fabricated baseline data', async () => {
+  mockOfflineBackend();
+  try {
+    await assert.rejects(
+      () => fetchEvaluationMetrics(),
+      /Evaluation metrics are unavailable from the backend/
+    );
   } finally {
     restoreFetch();
   }

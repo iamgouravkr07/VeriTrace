@@ -329,36 +329,41 @@ export async function verifyText(
 
 /**
  * Fetches evaluation benchmark metrics.
- * Attempts /api/v1/evaluation first,
- * falling back to /api/evaluation or baseline metrics.
+ * Attempts the current endpoint first, then the legacy endpoint.
+ * Metrics are never synthesized when the evaluation service is unavailable.
  */
 export async function fetchEvaluationMetrics(): Promise<BenchmarkMetrics> {
-  try {
+  const endpoints = [`${API_BASE_URL}/api/v1/evaluation`, `${API_BASE_URL}/api/evaluation`];
+
+  for (const endpoint of endpoints) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    let res = await fetch(`${API_BASE_URL}/api/v1/evaluation`, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    }).catch(() => null);
-
-    if (!res || !res.ok) {
-      res = await fetch(`${API_BASE_URL}/api/evaluation`, {
+    try {
+      const res = await fetch(endpoint, {
         headers: { Accept: 'application/json' },
         signal: controller.signal,
-      }).catch(() => null);
-    }
+      });
 
-    clearTimeout(timeoutId);
-
-    if (res && res.ok) {
-      return (await res.json()) as BenchmarkMetrics;
+      if (res.ok) {
+        const data = (await res.json()) as Partial<BenchmarkMetrics>;
+        if (
+          typeof data.precision === 'number' &&
+          typeof data.recall === 'number' &&
+          typeof data.f1Score === 'number' &&
+          typeof data.averageLatency === 'number' &&
+          typeof data.datasetSize === 'number' &&
+          Array.isArray(data.testedModels)
+        ) {
+          return data as BenchmarkMetrics;
+        }
+      }
+    } catch {
+      // Try the legacy endpoint before reporting the service as unavailable.
+    } finally {
+      clearTimeout(timeoutId);
     }
-  } catch {
-    // Backend offline; use baseline benchmark dataset.
   }
 
-  await new Promise((res) => setTimeout(res, 300));
-
-  return MOCK_BENCHMARK;
+  throw new Error('Evaluation metrics are unavailable from the backend.');
 }
